@@ -1,0 +1,1380 @@
+Here I have listed things that are done in this project till now we will continue after this from now 
+
+
+🔍 COLONY APP — DEEP ANALYSIS & COMPLETE BUILD PLAN
+📱 CURRENT UI ANALYSIS (Screenshots se)
+✅ Kya Accha Hai:
+
+    Green theme consistent hai across all screens
+    Home screen ka structure solid hai — Stories, Nearby People, Groups, Events
+    "Wave" concept unique hai (alag feel deta hai "Add Friend" se)
+    Distance badge (200M, 450M) — nice touch
+    Pinned Circles in Chat — good UX
+    Visual Journal in Profile — Instagram-like but different
+    Group cards with category tags & cover images
+
+❌ Kya Khamiyan Hai (Issues):
+
+Login Screen:
+
+    Bahut generic hai — koi personality nahi, koi illustration ya animation nahi
+    Input fields plain white boxes — no icons inside (email icon, lock icon missing)
+    "Username or email" — ye decide karo, username rakhoge ya email? Clear nahi hai
+    No terms & conditions checkbox
+    Google/Apple buttons ka styling flat hai
+
+Home Screen:
+
+    Location text "PARK STREET, AREA, PATNA" — hardcoded lag raha hai
+    Stories ring orange hai but app theme green hai — inconsistency
+    People cards me online/offline indicator nahi hai
+    Wave button pe koi feedback animation nahi dikhta
+    Community Highlights section ka event card pe no RSVP/interested button
+    No pull-to-refresh indicator
+    Search bar pe koi icon animation ya hint change nahi hai
+
+Groups/Hive Screen:
+
+    "Join Hive" vs "View Group" — inconsistent CTA naming
+    FAB (+) button bahut basic — no label, no animation
+    No filter/sort option (distance, members, category)
+    Amsterdam location text (inconsistency — pehle Patna tha)
+
+Chat Screen:
+
+    No typing indicator design
+    No message status icons (sent/delivered/read)
+    Pinned Circles pe scroll indicator nahi
+    No "Archive" or "Mute" swipe actions
+    Search bar me no voice search icon
+
+Profile Screen:
+
+    No bio/about section visible
+    No interest tags (hobbies, profession details)
+    Settings gear button bahut chhota — hard to tap
+    Visual Journal me no like/comment count
+    No "Activity Status" toggle (Online/Offline/Invisible)
+
+🚀 FEATURE RECOMMENDATIONS (Jo App Ko Next Level Le Jayengi)
+📍 Location Features:
+
+    Live Map View — Nearby people map pe dikhein (like Snap Map but for neighbors)
+    Location Pulse Animation — Jab app khule, ek radar-style pulse animation ho
+    Ghost Mode — Location hide karne ka option (premium feature ban sakta hai)
+    Geo-fenced Notifications — Kisi specific area me enter karo to alert
+
+💬 Communication:
+
+    Voice Notes — Chat me voice messages
+    Disappearing Messages — Auto-delete after 24 hours
+    Reactions on Messages — Emoji reactions (like iMessage)
+    Reply to specific message — Quote reply
+    Ice Breakers — Pre-made fun questions to start conversations
+
+🎉 Events & Social:
+
+    House Party Broadcast — "Hosting tonight! 🏠" — nearby people ko dikhe automatically
+    RSVP System — Going/Interested/Not Going
+    Event Countdown Timer — Live countdown on event cards
+    Neighborhood Polls — "Best chai spot nearby?" type polls
+    Skills Exchange — "I can teach guitar, need help with cooking"
+    Local Marketplace — Buy/Sell/Borrow from neighbors
+
+💕 Subtle Dating Angle:
+
+    Spark Feature — Alag from Wave, shows romantic interest (subtle heart icon)
+    Vibe Match — Common interests percentage dikhao
+    Anonymous Compliments — Send anonymous nice messages
+    "Looking For" in Profile — Friends / Networking / Open to dating / Activity partners
+    Photo Prompts — "This is me at my favorite spot" type profile prompts
+
+🎮 Gamification (Fresh, No Leaderboard):
+
+    Colony Karma Points — Earn by being active, hosting events, helping neighbors
+    Achievement Badges — "Event Host 🎪", "Social Butterfly 🦋", "Colony Pioneer 🏗️", "Night Owl 🦉"
+    Daily Streaks — App open streak, chat streak (like Snapchat but for neighbors)
+    Colony Level System — Newcomer → Neighbor → Local Legend → Colony Chief
+    Weekly Quests — "Wave at 3 new people this week" → earn special badge
+    Seasonal Challenges — Festival-based community challenges
+
+💰 Monetization:
+
+    Colony Premium Subscription — ₹99/month or ₹799/year
+
+    See who viewed your profile
+    Unlimited Waves (free users get 10/day)
+    Extended radius (10km instead of 5km)
+    Ghost Mode
+    Priority in Nearby People
+    Exclusive badges
+    Read receipts in chat
+
+    Boosted Profile — ₹49 for 24 hours — show up first in nearby
+    Event Promotion — ₹29 to promote event to wider audience
+    Virtual Gifts — Premium stickers/gifts in chat (₹10-₹99)
+    Verified Badge — ₹199 one-time — blue tick for authenticity
+    Local Business Ads — Businesses pay to show in Community Highlights
+    Group Upgrades — Premium group features (500+ members, analytics, custom branding)
+
+🔒 Security:
+
+    Device Fingerprinting — Device ID + model + OS version log
+    Rate Limiting — Max messages/waves per hour
+    Report & Block — One-tap report with categories
+    Content Moderation — AI-based image/text scanning
+    Two-Factor Authentication
+    Login Activity Log — Show "Logged in from Device X at Time Y"
+    Emergency SOS — Quick safety button
+
+🏗️ PHASE-WISE BUILD PROMPTS
+
+    Har phase ke baad maine likha hai ki kya expect karna hai aur kya test karna hai.
+
+PHASE 1: Supabase Project Setup & Flutter Configuration
+
+Prompt:
+
+text
+
+I have a Flutter app called "Colony" - a location-based social community app. I need to set up Supabase as the backend. Do the following:
+
+1. Create a file `lib/core/constants/supabase_constants.dart` with placeholder Supabase URL and Anon Key as static constants.
+
+2. Create `lib/core/services/supabase_service.dart` — a singleton class that:
+   - Initializes Supabase client using the constants
+   - Provides getter for SupabaseClient instance
+   - Provides getter for current user
+   - Provides getter for current session
+   - Has a method `initialize()` to be called in main.dart
+
+3. Update `main.dart` to:
+   - Call `WidgetsFlutterBinding.ensureInitialized()`
+   - Initialize SupabaseService before runApp
+   - Wrap the app with any necessary providers
+
+4. Add these dependencies to pubspec.yaml:
+   - supabase_flutter: ^2.8.0
+   - geolocator: ^13.0.2
+   - geocoding: ^3.0.0
+   - permission_handler: ^11.3.1
+   - device_info_plus: ^11.1.0
+   - flutter_secure_storage: ^9.2.2
+   - uuid: ^4.5.1
+   - cached_network_image: ^3.4.1
+   - shimmer: ^3.0.0
+   - lottie: ^3.1.3
+   - flutter_animate: ^4.5.0
+   - image_picker: ^1.1.2
+   - path_provider: ^2.1.4
+
+5. Create the folder structure:
+   lib/
+   ├── core/
+   │   ├── constants/
+   │   ├── services/
+   │   ├── utils/
+   │   ├── theme/
+   │   └── widgets/
+   ├── features/
+   │   ├── auth/
+   │   │   ├── data/
+   │   │   ├── domain/
+   │   │   └── presentation/
+   │   ├── home/
+   │   ├── chat/
+   │   ├── groups/
+   │   ├── profile/
+   │   ├── events/
+   │   ├── stories/
+   │   ├── notifications/
+   │   └── admin/
+   └── main.dart
+
+Do NOT remove any existing UI code. Only add the new files and update main.dart and pubspec.yaml.
+
+Phase 1 ke baad expect karo:
+
+    App compile aur run ho rahi hai bina error ke
+    Supabase service singleton ready hai
+    Folder structure clean hai
+    All packages installed
+
+Test karo:
+
+    flutter pub get run karo — koi error nahi aana chahiye
+    App start ho — splash/login screen dikhe
+    Console me koi Supabase error nahi (abhi URL placeholder hai, that's ok)
+
+PHASE 2: Supabase Database Schema — Core Tables (Run in Supabase SQL Editor)
+
+Prompt:
+
+text
+
+I need SQL scripts to run in Supabase SQL Editor to create the database schema for my Colony app. Create the following tables with proper relationships, indexes, and constraints. Write the complete SQL:
+
+TABLE 1: profiles
+- id UUID (references auth.users, primary key)
+- email TEXT UNIQUE NOT NULL
+- phone TEXT UNIQUE
+- username TEXT UNIQUE NOT NULL
+- full_name TEXT NOT NULL
+- bio TEXT (max 500 chars)
+- avatar_url TEXT
+- date_of_birth DATE
+- gender TEXT (check: 'male', 'female', 'non-binary', 'prefer_not_to_say')
+- looking_for TEXT[] (array: 'friends', 'networking', 'dating', 'activity_partners')
+- interests TEXT[] (array of interest tags)
+- profession TEXT
+- latitude DOUBLE PRECISION
+- longitude DOUBLE PRECISION
+- location_name TEXT
+- last_location_update TIMESTAMPTZ
+- is_online BOOLEAN DEFAULT false
+- last_seen TIMESTAMPTZ
+- is_verified BOOLEAN DEFAULT false
+- is_premium BOOLEAN DEFAULT false
+- premium_expires_at TIMESTAMPTZ
+- colony_level INTEGER DEFAULT 1
+- karma_points INTEGER DEFAULT 0
+- device_id TEXT
+- device_model TEXT
+- fcm_token TEXT
+- is_banned BOOLEAN DEFAULT false
+- ban_reason TEXT
+- ghost_mode BOOLEAN DEFAULT false
+- created_at TIMESTAMPTZ DEFAULT now()
+- updated_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 2: device_logs
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID REFERENCES profiles(id)
+- device_id TEXT NOT NULL
+- device_model TEXT
+- os_version TEXT
+- app_version TEXT
+- ip_address TEXT
+- login_at TIMESTAMPTZ DEFAULT now()
+- is_active BOOLEAN DEFAULT true
+
+TABLE 3: blocked_devices
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- device_id TEXT UNIQUE NOT NULL
+- reason TEXT
+- blocked_by UUID REFERENCES profiles(id)
+- blocked_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 4: user_reports
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- reporter_id UUID REFERENCES profiles(id)
+- reported_user_id UUID REFERENCES profiles(id)
+- reason TEXT NOT NULL (check: 'spam', 'harassment', 'fake_profile', 'inappropriate_content', 'other')
+- description TEXT
+- status TEXT DEFAULT 'pending' (check: 'pending', 'reviewed', 'action_taken', 'dismissed')
+- admin_notes TEXT
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 5: blocked_users
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- blocker_id UUID REFERENCES profiles(id)
+- blocked_id UUID REFERENCES profiles(id)
+- created_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(blocker_id, blocked_id)
+
+Add indexes on:
+- profiles(latitude, longitude) 
+- profiles(is_online)
+- profiles(username)
+- device_logs(device_id)
+- device_logs(user_id)
+
+Add an updated_at trigger function that auto-updates the updated_at column on any profiles row update.
+
+Add a UNIQUE constraint to prevent the same device_id from being linked to more than 3 user accounts in device_logs.
+
+Write complete SQL with all CREATE TABLE, CREATE INDEX, CREATE FUNCTION, and CREATE TRIGGER statements. Add comments explaining each table.
+
+Phase 2 ke baad expect karo:
+
+    Supabase me 5 tables ban gayi hongi
+    Indexes properly set honge
+    updated_at trigger kaam kare
+
+Test karo:
+
+    Supabase Dashboard → Table Editor me sab tables dikhengi
+    Try insert a test row in profiles
+    Update that row — updated_at auto-change hona chahiye
+
+PHASE 3: Database Schema — Chat, Groups & Events Tables
+
+Prompt:
+
+text
+
+Continue building the Colony app database in Supabase SQL Editor. Add these tables (the profiles table already exists from Phase 2):
+
+TABLE 6: conversations
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- type TEXT NOT NULL (check: 'direct', 'group')
+- group_id UUID (nullable, will reference groups table)
+- created_at TIMESTAMPTZ DEFAULT now()
+- updated_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 7: conversation_participants
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE
+- user_id UUID REFERENCES profiles(id)
+- role TEXT DEFAULT 'member' (check: 'member', 'admin', 'owner')
+- joined_at TIMESTAMPTZ DEFAULT now()
+- last_read_at TIMESTAMPTZ
+- is_muted BOOLEAN DEFAULT false
+- is_pinned BOOLEAN DEFAULT false
+- UNIQUE(conversation_id, user_id)
+
+TABLE 8: messages
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE
+- sender_id UUID REFERENCES profiles(id)
+- content TEXT
+- message_type TEXT DEFAULT 'text' (check: 'text', 'image', 'video', 'audio', 'gif', 'sticker', 'voice_note', 'location', 'event_share')
+- media_url TEXT
+- thumbnail_url TEXT
+- reply_to_id UUID (self-reference to messages)
+- is_deleted BOOLEAN DEFAULT false
+- is_edited BOOLEAN DEFAULT false
+- edited_at TIMESTAMPTZ
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 9: message_reactions
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- message_id UUID REFERENCES messages(id) ON DELETE CASCADE
+- user_id UUID REFERENCES profiles(id)
+- emoji TEXT NOT NULL
+- created_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(message_id, user_id, emoji)
+
+TABLE 10: message_read_receipts
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- message_id UUID REFERENCES messages(id) ON DELETE CASCADE
+- user_id UUID REFERENCES profiles(id)
+- read_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(message_id, user_id)
+
+TABLE 11: groups
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- name TEXT NOT NULL
+- description TEXT
+- cover_image_url TEXT
+- icon_url TEXT
+- category TEXT NOT NULL (check: 'tech', 'fitness', 'lifestyle', 'art_design', 'music', 'food', 'sports', 'education', 'gaming', 'other')
+- latitude DOUBLE PRECISION NOT NULL
+- longitude DOUBLE PRECISION NOT NULL
+- location_name TEXT
+- radius_km DOUBLE PRECISION DEFAULT 5.0
+- max_members INTEGER DEFAULT 200
+- member_count INTEGER DEFAULT 0
+- is_private BOOLEAN DEFAULT false
+- join_approval_required BOOLEAN DEFAULT false
+- created_by UUID REFERENCES profiles(id)
+- is_premium_group BOOLEAN DEFAULT false
+- is_active BOOLEAN DEFAULT true
+- created_at TIMESTAMPTZ DEFAULT now()
+- updated_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 12: group_members
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- group_id UUID REFERENCES groups(id) ON DELETE CASCADE
+- user_id UUID REFERENCES profiles(id)
+- role TEXT DEFAULT 'member' (check: 'member', 'moderator', 'admin', 'owner')
+- status TEXT DEFAULT 'active' (check: 'active', 'pending', 'banned')
+- joined_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(group_id, user_id)
+
+TABLE 13: events
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- title TEXT NOT NULL
+- description TEXT
+- cover_image_url TEXT
+- event_type TEXT NOT NULL (check: 'house_party', 'meetup', 'workshop', 'sports', 'food', 'music', 'community', 'other')
+- latitude DOUBLE PRECISION NOT NULL
+- longitude DOUBLE PRECISION NOT NULL
+- location_name TEXT
+- address TEXT
+- starts_at TIMESTAMPTZ NOT NULL
+- ends_at TIMESTAMPTZ
+- max_attendees INTEGER
+- current_attendees INTEGER DEFAULT 0
+- is_free BOOLEAN DEFAULT true
+- price DECIMAL(10,2)
+- created_by UUID REFERENCES profiles(id)
+- group_id UUID REFERENCES groups(id) (nullable - can be group event or personal)
+- broadcast_radius_km DOUBLE PRECISION DEFAULT 5.0
+- is_promoted BOOLEAN DEFAULT false
+- is_active BOOLEAN DEFAULT true
+- created_at TIMESTAMPTZ DEFAULT now()
+- updated_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 14: event_responses
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- event_id UUID REFERENCES events(id) ON DELETE CASCADE
+- user_id UUID REFERENCES profiles(id)
+- status TEXT NOT NULL (check: 'going', 'interested', 'not_going')
+- responded_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(event_id, user_id)
+
+Add proper indexes on:
+- messages(conversation_id, created_at)
+- messages(sender_id)
+- groups(latitude, longitude)
+- groups(category)
+- events(latitude, longitude)
+- events(starts_at)
+- events(created_by)
+- group_members(user_id)
+- conversation_participants(user_id)
+
+Add updated_at triggers for conversations, groups, and events tables.
+
+Phase 3 ke baad expect karo:
+
+    9 new tables Supabase me
+    Chat system ka complete schema ready
+    Events & Groups schema ready
+
+Test karo:
+
+    Supabase me sab tables check karo
+    Foreign key relationships verify karo
+    Try inserting test data in groups table
+
+PHASE 4: Database Schema — Stories, Waves, Gamification & Notifications
+
+Prompt:
+
+text
+
+Continue building Colony app database. Add these remaining tables in Supabase SQL Editor:
+
+TABLE 15: waves (connection requests like "Wave" at someone nearby)
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- sender_id UUID REFERENCES profiles(id)
+- receiver_id UUID REFERENCES profiles(id)
+- wave_type TEXT DEFAULT 'friendly' (check: 'friendly', 'spark')  
+- message TEXT (optional short message with wave, max 100 chars)
+- status TEXT DEFAULT 'pending' (check: 'pending', 'accepted', 'declined', 'expired')
+- distance_at_wave DOUBLE PRECISION (distance in meters when wave was sent)
+- created_at TIMESTAMPTZ DEFAULT now()
+- expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours')
+- UNIQUE(sender_id, receiver_id) — one active wave per pair
+
+TABLE 16: connections (accepted waves become connections/friends)
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user1_id UUID REFERENCES profiles(id)
+- user2_id UUID REFERENCES profiles(id)
+- connected_at TIMESTAMPTZ DEFAULT now()
+- connection_source TEXT DEFAULT 'wave' (check: 'wave', 'group', 'event')
+- CHECK (user1_id < user2_id) — prevent duplicate pairs
+- UNIQUE(user1_id, user2_id)
+
+TABLE 17: stories
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID REFERENCES profiles(id)
+- media_url TEXT NOT NULL
+- media_type TEXT NOT NULL (check: 'image', 'video')
+- thumbnail_url TEXT
+- caption TEXT (max 200 chars)
+- location_name TEXT
+- latitude DOUBLE PRECISION
+- longitude DOUBLE PRECISION
+- view_count INTEGER DEFAULT 0
+- is_active BOOLEAN DEFAULT true
+- expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours')
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 18: story_views
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- story_id UUID REFERENCES stories(id) ON DELETE CASCADE
+- viewer_id UUID REFERENCES profiles(id)
+- viewed_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(story_id, viewer_id)
+
+TABLE 19: notifications
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID REFERENCES profiles(id)
+- type TEXT NOT NULL (check: 'wave_received', 'wave_accepted', 'new_message', 'group_invite', 'event_nearby', 'event_reminder', 'new_connection', 'story_view', 'achievement_unlocked', 'system', 'admin')
+- title TEXT NOT NULL
+- body TEXT
+- data JSONB (extra data like event_id, user_id, group_id etc.)
+- is_read BOOLEAN DEFAULT false
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 20: achievements
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- code TEXT UNIQUE NOT NULL (e.g. 'first_wave', 'event_host_5', 'social_butterfly')
+- name TEXT NOT NULL
+- description TEXT NOT NULL
+- icon_url TEXT
+- badge_color TEXT
+- karma_reward INTEGER DEFAULT 0
+- category TEXT (check: 'social', 'explorer', 'host', 'community', 'special')
+- requirement_count INTEGER DEFAULT 1
+- is_active BOOLEAN DEFAULT true
+
+TABLE 21: user_achievements
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID REFERENCES profiles(id)
+- achievement_id UUID REFERENCES achievements(id)
+- progress INTEGER DEFAULT 0
+- is_completed BOOLEAN DEFAULT false
+- completed_at TIMESTAMPTZ
+- created_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(user_id, achievement_id)
+
+TABLE 22: daily_streaks
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID REFERENCES profiles(id)
+- streak_type TEXT NOT NULL (check: 'app_open', 'wave_sent', 'chat_active', 'story_posted')
+- current_streak INTEGER DEFAULT 0
+- longest_streak INTEGER DEFAULT 0
+- last_activity_date DATE
+- UNIQUE(user_id, streak_type)
+
+TABLE 23: user_subscriptions (for premium/monetization)
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID REFERENCES profiles(id)
+- plan_type TEXT NOT NULL (check: 'monthly', 'yearly')
+- status TEXT DEFAULT 'active' (check: 'active', 'cancelled', 'expired')
+- amount DECIMAL(10,2)
+- currency TEXT DEFAULT 'INR'
+- started_at TIMESTAMPTZ DEFAULT now()
+- expires_at TIMESTAMPTZ NOT NULL
+- payment_id TEXT
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 24: profile_boosts
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id UUID REFERENCES profiles(id)
+- boost_type TEXT DEFAULT 'standard' (check: 'standard', 'super')
+- started_at TIMESTAMPTZ DEFAULT now()
+- expires_at TIMESTAMPTZ NOT NULL
+- is_active BOOLEAN DEFAULT true
+
+TABLE 25: virtual_gifts
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- sender_id UUID REFERENCES profiles(id)
+- receiver_id UUID REFERENCES profiles(id)
+- gift_type TEXT NOT NULL
+- gift_name TEXT NOT NULL
+- gift_icon_url TEXT
+- price DECIMAL(10,2)
+- message TEXT
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 26: admin_settings
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- key TEXT UNIQUE NOT NULL
+- value JSONB NOT NULL
+- description TEXT
+- updated_at TIMESTAMPTZ DEFAULT now()
+- updated_by UUID REFERENCES profiles(id)
+
+TABLE 27: admin_audit_log
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- admin_id UUID REFERENCES profiles(id)
+- action TEXT NOT NULL
+- target_type TEXT (check: 'user', 'group', 'event', 'message', 'report', 'setting')
+- target_id UUID
+- details JSONB
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 28: polls
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- question TEXT NOT NULL
+- options JSONB NOT NULL (array of option objects)
+- created_by UUID REFERENCES profiles(id)
+- group_id UUID REFERENCES groups(id) (nullable)
+- latitude DOUBLE PRECISION
+- longitude DOUBLE PRECISION
+- radius_km DOUBLE PRECISION DEFAULT 5.0
+- expires_at TIMESTAMPTZ
+- total_votes INTEGER DEFAULT 0
+- is_active BOOLEAN DEFAULT true
+- created_at TIMESTAMPTZ DEFAULT now()
+
+TABLE 29: poll_votes
+- id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- poll_id UUID REFERENCES polls(id) ON DELETE CASCADE
+- user_id UUID REFERENCES profiles(id)
+- option_index INTEGER NOT NULL
+- created_at TIMESTAMPTZ DEFAULT now()
+- UNIQUE(poll_id, user_id)
+
+Add indexes on:
+- waves(receiver_id, status)
+- waves(sender_id)
+- connections(user1_id)
+- connections(user2_id)
+- stories(user_id, is_active, expires_at)
+- notifications(user_id, is_read)
+- user_achievements(user_id)
+- profile_boosts(user_id, is_active)
+
+Also INSERT default achievement records:
+- 'first_wave': "First Wave", "Send your first wave to someone nearby", karma_reward: 10, category: 'social'
+- 'wave_master_10': "Wave Master", "Send 10 waves", karma_reward: 25, category: 'social'
+- 'social_butterfly_50': "Social Butterfly", "Make 50 connections", karma_reward: 100, category: 'social'
+- 'event_host_1': "Party Starter", "Host your first event", karma_reward: 50, category: 'host'
+- 'event_host_5': "Event Mogul", "Host 5 events", karma_reward: 150, category: 'host'
+- 'group_creator': "Hive Builder", "Create your first group", karma_reward: 30, category: 'community'
+- 'story_teller_10': "Story Teller", "Post 10 stories", karma_reward: 20, category: 'social'
+- 'streak_7': "Week Warrior", "7-day app streak", karma_reward: 50, category: 'explorer'
+- 'streak_30': "Monthly Legend", "30-day app streak", karma_reward: 200, category: 'explorer'
+- 'colony_pioneer': "Colony Pioneer", "Be among the first 100 users", karma_reward: 500, category: 'special'
+- 'night_owl': "Night Owl", "Active after midnight 10 times", karma_reward: 30, category: 'special'
+- 'early_bird': "Early Bird", "Active before 6 AM 10 times", karma_reward: 30, category: 'special'
+
+Also insert default admin_settings:
+- 'max_wave_per_day': {"free": 10, "premium": 999}, "Maximum waves per day"
+- 'nearby_radius_km': {"free": 5, "premium": 10}, "Nearby discovery radius"
+- 'max_group_members': {"free": 200, "premium": 500}, "Max members per group"
+- 'story_duration_hours': {"value": 24}, "Story visibility duration"
+- 'wave_expiry_hours': {"value": 24}, "Wave expiry time"
+- 'max_accounts_per_device': {"value": 2}, "Max accounts per device"
+- 'min_age': {"value": 16}, "Minimum age to use app"
+- 'maintenance_mode': {"enabled": false, "message": ""}, "App maintenance mode"
+
+Phase 4 ke baad expect karo:
+
+    Remaining 15 tables ban gayi
+    Default achievements inserted
+    Admin settings configured
+    Complete database schema ready!
+
+Test karo:
+
+    Supabase me total 29 tables honi chahiye
+    achievements table me 12 records
+    admin_settings me 8 records
+    All foreign keys working
+
+PHASE 5: Row Level Security (RLS) Policies
+
+Prompt:
+
+text
+
+I need to enable Row Level Security on ALL tables in my Colony app Supabase database and create proper RLS policies. Write the complete SQL:
+
+IMPORTANT RULES:
+- Every table MUST have RLS enabled
+- Users can only read/write their own data unless specified
+- Admin users (where profiles.is_banned = false AND exists in admin role) get broader access
+- Blocked users should not see each other's data
+
+For each table, create policies:
+
+PROFILES:
+- SELECT: Anyone authenticated can read any profile (except blocked users)
+- INSERT: Users can insert their own profile (id must match auth.uid())
+- UPDATE: Users can only update their own profile
+- DELETE: No one can delete profiles (admin will use service role)
+
+DEVICE_LOGS:
+- SELECT: Users can see their own device logs only
+- INSERT: Users can insert their own logs
+- No UPDATE or DELETE for users
+
+BLOCKED_USERS:
+- SELECT: Users can see their own blocks
+- INSERT: Users can block anyone (blocker_id must match auth.uid())
+- DELETE: Users can unblock (blocker_id must match auth.uid())
+
+USER_REPORTS:
+- SELECT: Users can see their own reports
+- INSERT: Users can create reports (reporter_id must match auth.uid())
+
+WAVES:
+- SELECT: Users can see waves they sent OR received
+- INSERT: Users can send waves (sender_id must match auth.uid())
+- UPDATE: Receiver can accept/decline (receiver_id must match auth.uid())
+
+CONNECTIONS:
+- SELECT: Users can see their own connections (user1_id or user2_id matches)
+- INSERT: System-managed (through functions)
+- DELETE: Either connected user can delete
+
+CONVERSATIONS:
+- SELECT: Users can see conversations they participate in (via conversation_participants)
+
+CONVERSATION_PARTICIPANTS:
+- SELECT: Users can see participants of their conversations
+- INSERT: For direct chats, authenticated users; for groups, managed by functions
+- UPDATE: Users can update their own participation (mute, pin, last_read)
+
+MESSAGES:
+- SELECT: Users can read messages in their conversations only
+- INSERT: Users can send messages in conversations they're part of
+- UPDATE: Users can edit their own messages only
+- DELETE: Users can soft-delete their own messages only
+
+MESSAGE_REACTIONS:
+- SELECT: Anyone in the conversation can see reactions
+- INSERT: Users can add reactions to messages in their conversations
+- DELETE: Users can remove their own reactions
+
+STORIES:
+- SELECT: Authenticated users can see active, non-expired stories (not from blocked users)
+- INSERT: Users can create their own stories
+- UPDATE: Users can update their own stories
+- DELETE: Users can delete their own stories
+
+STORY_VIEWS:
+- SELECT: Story owner can see who viewed; viewer can see their own views
+- INSERT: Users can record their own views
+
+GROUPS:
+- SELECT: Anyone authenticated can see active groups
+- INSERT: Authenticated users can create groups
+- UPDATE: Only group owner/admin can update
+- DELETE: Only group owner can delete
+
+GROUP_MEMBERS:
+- SELECT: Anyone can see group members of groups they're in
+- INSERT: Users can join groups or be added
+- UPDATE: Group admin/owner can change roles
+- DELETE: Users can leave; admins can remove
+
+EVENTS:
+- SELECT: Authenticated users can see active events
+- INSERT: Authenticated users can create events
+- UPDATE: Event creator can update
+- DELETE: Event creator can delete
+
+EVENT_RESPONSES:
+- SELECT: Anyone can see responses for events they can see
+- INSERT: Users can respond to events
+- UPDATE: Users can change their response
+- DELETE: Users can remove their response
+
+NOTIFICATIONS:
+- SELECT: Users can see their own notifications only
+- INSERT: System-managed
+- UPDATE: Users can mark their own as read
+
+ACHIEVEMENTS & USER_ACHIEVEMENTS:
+- SELECT: Anyone can see achievements; users see their own progress
+- INSERT: System-managed
+- UPDATE: System-managed
+
+DAILY_STREAKS:
+- SELECT: Users can see their own streaks
+- INSERT/UPDATE: System-managed through functions
+
+POLLS & POLL_VOTES:
+- SELECT: Authenticated users can see polls; users see their own votes
+- INSERT: Users can create polls and vote
+- UPDATE: Poll creator can update poll
+
+ADMIN_SETTINGS:
+- SELECT: Public read (for app config)
+- UPDATE: Admin only
+
+ADMIN_AUDIT_LOG:
+- SELECT: Admin only
+- INSERT: Admin only
+
+USER_SUBSCRIPTIONS, PROFILE_BOOSTS, VIRTUAL_GIFTS:
+- SELECT: Users can see their own records
+- INSERT: System-managed through payment functions
+
+BLOCKED_DEVICES:
+- SELECT/INSERT/UPDATE: Admin only
+
+Create a helper function `is_admin(user_id UUID)` that checks if the user has admin role.
+Also create a function `are_users_blocked(uid1 UUID, uid2 UUID)` that returns boolean.
+
+Enable RLS on ALL 29 tables and create all policies.
+
+Phase 5 ke baad expect karo:
+
+    All tables me RLS enabled
+    Users apna data hi access kar payenge
+    Blocked users ek dusre ka data nahi dekh payenge
+    Admin special access
+
+Test karo:
+
+    Supabase Dashboard → Authentication → create a test user
+    Try to read profiles — should work
+    Try to read another user's notifications — should fail
+    Check RLS enabled flag on each table in Table Editor
+
+PHASE 6: Supabase Realtime & Database Functions
+
+Prompt:
+
+text
+
+Create Supabase SQL functions and enable Realtime for the Colony app. Write complete SQL:
+
+FUNCTION 1: handle_new_user()
+- Trigger: AFTER INSERT on auth.users
+- Creates a profile row with id = new user's id, email = new user's email
+- Sets default username from email (part before @, add random 4 digits if taken)
+- Returns trigger
+
+FUNCTION 2: get_nearby_users(user_lat DOUBLE, user_lng DOUBLE, radius_km DOUBLE, current_user_id UUID)
+- Uses Haversine formula to find users within radius
+- EXCLUDES: current user, blocked users (both directions), banned users, ghost mode users
+- RETURNS TABLE: id, username, full_name, avatar_url, bio, profession, latitude, longitude, distance_meters, is_online, last_seen, looking_for, interests, colony_level, is_verified, is_premium
+- ORDER BY: is_online DESC, distance_meters ASC
+- LIMIT 50
+
+FUNCTION 3: get_nearby_events(user_lat DOUBLE, user_lng DOUBLE, radius_km DOUBLE)
+- Finds active events within radius that haven't ended yet
+- RETURNS TABLE: all event fields + creator name + creator avatar + distance_meters + response_count
+- ORDER BY: starts_at ASC
+
+FUNCTION 4: get_nearby_groups(user_lat DOUBLE, user_lng DOUBLE, radius_km DOUBLE, current_user_id UUID)
+- Finds active groups within radius
+- RETURNS TABLE: all group fields + is_member (boolean) + distance_meters
+- ORDER BY: member_count DESC, distance_meters ASC
+
+FUNCTION 5: accept_wave(wave_id UUID, current_user_id UUID)
+- Validates the wave exists and receiver_id matches current_user_id
+- Updates wave status to 'accepted'
+- Creates a connection between sender and receiver (ensuring user1_id < user2_id)
+- Creates a direct conversation for the two users
+- Adds both as conversation_participants
+- Creates a notification for the wave sender
+- Returns the new conversation_id
+
+FUNCTION 6: update_user_location(user_id UUID, lat DOUBLE, lng DOUBLE, loc_name TEXT)
+- Updates the user's latitude, longitude, location_name, last_location_update
+- Also updates is_online to true
+- Returns void
+
+FUNCTION 7: check_device_limit(p_device_id TEXT)
+- Counts how many DISTINCT user_ids are linked to this device_id in device_logs
+- Returns the count
+- Used to enforce max accounts per device
+
+FUNCTION 8: increment_karma(p_user_id UUID, p_amount INTEGER)
+- Adds karma_points to user's profile
+- Checks if any achievement thresholds are met
+- Updates user_achievements progress
+- Returns new total karma
+
+FUNCTION 9: check_and_update_streak(p_user_id UUID, p_streak_type TEXT)
+- Checks if last_activity_date was yesterday → increment streak
+- If last_activity_date was today → do nothing
+- If last_activity_date was before yesterday → reset streak to 1
+- Updates longest_streak if current exceeds it
+- Awards karma for milestone streaks (7, 14, 30, 60, 100)
+- Returns current_streak
+
+FUNCTION 10: get_user_stats(p_user_id UUID)
+- Returns: connections_count, groups_count, events_hosted_count, stories_count, karma_points, colony_level, current_streak (app_open type)
+
+ENABLE REALTIME on these tables:
+- messages (for real-time chat)
+- conversations (for conversation updates)
+- waves (for real-time wave notifications)
+- notifications (for real-time notification badges)
+- profiles (for online status updates)
+- stories (for new stories)
+
+Write ALTER PUBLICATION statements to add these tables to supabase_realtime.
+
+Phase 6 ke baad expect karo:
+
+    10 database functions ready
+    Realtime enabled on 6 key tables
+    Auto-user creation on signup
+    Nearby search optimized with Haversine
+
+Test karo:
+
+    Create a user through Supabase Auth → profile auto-create honi chahiye
+    Call get_nearby_users with test coordinates
+    Check Realtime is enabled in Database → Replication settings
+
+PHASE 7: Supabase Storage Buckets & Edge Functions
+
+Prompt:
+
+text
+
+Set up Supabase Storage buckets and create necessary configurations for the Colony app.
+
+STORAGE BUCKETS (create via Supabase Dashboard or SQL):
+
+1. BUCKET: avatars
+   - Public: true
+   - File size limit: 5MB
+   - Allowed MIME types: image/jpeg, image/png, image/webp
+   - Policy: Users can upload to their own folder (user_id/), anyone can read
+
+2. BUCKET: stories
+   - Public: true  
+   - File size limit: 20MB (for videos)
+   - Allowed MIME types: image/jpeg, image/png, image/webp, video/mp4
+   - Policy: Users can upload to their own folder, anyone authenticated can read
+
+3. BUCKET: chat-media
+   - Public: false (private)
+   - File size limit: 25MB
+   - Allowed MIME types: image/*, video/mp4, audio/mpeg, audio/m4a, audio/ogg
+   - Policy: Only conversation participants can read/write
+
+4. BUCKET: group-covers
+   - Public: true
+   - File size limit: 10MB
+   - Allowed MIME types: image/jpeg, image/png, image/webp
+   - Policy: Group admins can upload, anyone can read
+
+5. BUCKET: event-covers
+   - Public: true
+   - File size limit: 10MB
+   - Allowed MIME types: image/jpeg, image/png, image/webp
+   - Policy: Event creators can upload, anyone can read
+
+6. BUCKET: visual-journal
+   - Public: true
+   - File size limit: 15MB
+   - Allowed MIME types: image/jpeg, image/png, image/webp, video/mp4
+   - Policy: Users can upload to their own folder, anyone can read
+
+Write the SQL to create all buckets and their storage policies.
+
+Also write these storage policies:
+- For avatars: INSERT where (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1])
+- SELECT for public buckets: allow all authenticated
+- For chat-media: only allow if user is participant in the conversation (folder structure: conversation_id/filename)
+
+Write complete SQL for all bucket creation and policy setup.
+
+Phase 7 ke baad expect karo:
+
+    6 storage buckets created
+    Upload policies set correctly
+    Public/private access configured
+
+Test karo:
+
+    Supabase Dashboard → Storage me 6 buckets dikhne chahiye
+    Try uploading a test image to avatars bucket
+    Check if public URL works for public buckets
+
+PHASE 8: Flutter Auth Service — Email/Password Signup & Login
+
+Prompt:
+
+text
+
+Now let's connect Flutter frontend to Supabase backend. Create the authentication system for Colony app.
+
+FILE 1: lib/features/auth/data/auth_repository.dart
+Create a class AuthRepository with these methods:
+
+1. signUpWithEmail({required String email, required String password, required String fullName, required String username})
+   - First check if username is already taken (query profiles table)
+   - If taken, throw a descriptive error
+   - Call supabase.auth.signUp with email and password
+   - The trigger will auto-create profile, but we need to update it with fullName and username
+   - After signup, update the profile with full_name and username
+   - Return the User object
+   - Handle all errors with descriptive messages
+
+2. signInWithEmail({required String email, required String password})
+   - Call supabase.auth.signInWithPassword
+   - After login, log the device info (call _logDevice method)
+   - Update profile is_online = true
+   - Return the User object
+
+3. signOut()
+   - Update profile is_online = false, last_seen = now
+   - Call supabase.auth.signOut()
+
+4. resetPassword({required String email})
+   - Call supabase.auth.resetPasswordForEmail
+
+5. getCurrentUser() → User?
+   - Return supabase.auth.currentUser
+
+6. getSession() → Session?
+   - Return supabase.auth.currentSession
+
+7. onAuthStateChange() → Stream<AuthState>
+   - Return supabase.auth.onAuthStateChange
+
+8. _logDevice() — private method
+   - Use device_info_plus to get device ID, model, OS version
+   - Check device limit using check_device_limit RPC function
+   - If limit exceeded (>2 accounts on this device), sign out and throw error "Maximum accounts reached on this device"
+   - Otherwise, insert into device_logs table
+   - Also update profile with device_id and device_model
+
+FILE 2: lib/features/auth/data/auth_state_notifier.dart
+Create a StateNotifier/ChangeNotifier class AuthStateNotifier:
+- States: initial, loading, authenticated, unauthenticated, error
+- Hold current user profile data
+- Listen to auth state changes
+- Auto-navigate based on auth state
+
+FILE 3: lib/features/auth/domain/auth_validators.dart
+Create static validation methods:
+- validateEmail(String) → String? (null if valid, error message if invalid)
+- validatePassword(String) → String? (min 8 chars, 1 uppercase, 1 number, 1 special char)
+- validateUsername(String) → String? (3-20 chars, only alphanumeric and underscore, no spaces)
+- validateFullName(String) → String? (min 2 chars, no special characters)
+
+FILE 4: Update your existing Login screen to:
+- Use AuthRepository for actual login
+- Show loading state on login button
+- Show error messages in a SnackBar
+- Navigate to home on successful login
+- Add form validation using the validators
+- Add password visibility toggle (eye icon)
+- Add the email icon inside email field and lock icon inside password field
+
+FILE 5: Update your existing Signup screen to:
+- Add fields: Full Name, Username, Email, Password, Confirm Password
+- Add real validation using validators
+- Add terms & conditions checkbox (must be checked to proceed)
+- Call AuthRepository.signUpWithEmail on submit
+- Show loading, error, success states
+- On success, navigate to onboarding flow (we'll build it in next phase)
+
+Make sure to keep all existing UI styling (green theme, same fonts, same layout structure). Only add functionality and minor UI improvements (icons in fields, validation errors, loading states).
+
+Use try-catch blocks everywhere. Never let the app crash. Show user-friendly error messages.
+
+Phase 8 ke baad expect karo:
+
+    Login actually kaam kare — Supabase se connect ho
+    Signup kaam kare — new user bane Supabase me
+    Device logging ho
+    Validation errors dikhe
+    Loading states dikhe
+
+Test karo:
+
+    Signup with a new email → user banna chahiye Supabase Auth me
+    Profile auto-create honi chahiye profiles table me
+    Login with that email → home screen pe jaana chahiye
+    Wrong password → error message dikhna chahiye
+    Try signup with taken username → error
+    Check device_logs table → entry honi chahiye
+
+PHASE 9: Phone OTP Verification & Email Verification
+
+Prompt:
+
+text
+
+Add phone OTP verification and email verification to Colony app's auth system.
+
+FILE 1: Update lib/features/auth/data/auth_repository.dart — add these methods:
+
+1. sendPhoneOTP({required String phoneNumber})
+   - Format phone to international format (add +91 if Indian number)
+   - Call supabase.auth.signInWithOtp(phone: phoneNumber)
+   - Handle errors (invalid number, rate limit, etc.)
+   - Return void
+
+2. verifyPhoneOTP({required String phoneNumber, required String otp})
+   - Call supabase.auth.verifyOTP(phone: phoneNumber, token: otp, type: OtpType.sms)
+   - On success, update profile phone field
+   - Return the AuthResponse
+
+3. sendEmailVerification()
+   - Get current user email
+   - Call supabase.auth.resend(type: OtpType.email, email: currentUser.email)
+   - Return void
+
+4. isEmailVerified() → bool
+   - Check currentUser.emailConfirmedAt != null
+
+5. isPhoneVerified() → bool
+   - Check if profile has phone number that matches auth user's phone
+
+6. linkPhoneToAccount({required String phoneNumber, required String otp})
+   - Verify OTP first
+   - Update profile's phone field
+   - Check if this phone is already used by another account
+   - If yes, throw error "This phone number is already registered"
+   - Return void
+
+FILE 2: Create lib/features/auth/presentation/screens/phone_verification_screen.dart
+- Beautiful screen with Colony branding
+- Phone number input with country code selector (default +91 India)
+- "Send OTP" button — green theme, full width
+- After OTP sent, show 6-digit OTP input (individual boxes for each digit, auto-focus next)
+- Auto-submit when all 6 digits entered
+- Resend OTP button with 60-second countdown timer
+- Show loading states, error messages
+- On success, navigate to next onboarding step
+- "Skip for now" link at bottom (phone verification should be optional but encouraged)
+- Add Lottie animation of a phone/message icon at top
+
+FILE 3: Create lib/features/auth/presentation/screens/email_verification_screen.dart
+- Show "Check your email" message with the user's email address
+- Animated email/inbox illustration (use Lottie)
+- "Resend verification email" button with countdown
+- "I've verified" button that checks isEmailVerified() and proceeds
+- Auto-check every 5 seconds if email is verified (poll the auth state)
+- On verified, show success animation and navigate forward
+- "Change email" option
+
+FILE 4: Create lib/features/auth/presentation/widgets/otp_input_field.dart
+- A reusable widget that shows 6 individual boxes for OTP input
+- Each box auto-focuses next on input
+- Backspace goes to previous box
+- Paste support (user pastes full OTP)
+- Green border on filled boxes
+- Error state (red border + shake animation)
+- Auto-submit callback when all 6 filled
+
+Keep all designs consistent with existing green theme. Use the same card styles, button styles, and font weights as existing screens.
+
+Phase 9 ke baad expect karo:
+
+    Phone OTP screen with beautiful 6-digit input
+    Email verification screen with auto-check
+    Resend timers working
+    Skip option available
+
+Test karo:
+
+    Send OTP to your phone → you should receive SMS (configure Supabase Auth → Phone provider)
+    Enter correct OTP → verification success
+    Enter wrong OTP → error message
+    Resend timer countdown works
+    Email verification check works
+
+PHASE 10: Complete Onboarding Flow with Location
+
+Prompt:
+
+text
+
+Create a beautiful multi-step onboarding flow for Colony app. This flow appears after signup, before the home screen.
+
+FILE 1: Create lib/features/auth/presentation/screens/onboarding_flow_screen.dart
+- A PageView with smooth page transitions
+- Progress indicator at top (step dots or progress bar, green themed)
+- Total 5 steps in the onboarding
+- User can go back to previous steps
+- Data persists between steps (use a provider/controller)
+- Cannot skip to home without completing required steps
+
+FILE 2: Create lib/features/auth/presentation/screens/onboarding_steps/step1_welcome.dart
+- Full screen welcome page
+- Colony logo with subtle pulse animation
+- "Welcome to Colony" heading
+- "Discover your neighborhood like never before" subtext
+- Beautiful Lottie animation showing community/people connecting
+- "Let's Get Started →" button
+- Warm, inviting design
+
+FILE 3: Create lib/features/auth/presentation/screens/onboarding_steps/step2_profile_setup.dart
+- Profile photo upload (circular, with camera icon overlay)
+  - Tap to open image picker (camera or gallery)
+  - Upload to Supabase avatars bucket
+  - Show upload progress
+- Full Name field (pre-filled if entered during signup)
+- Username field (pre-filled, with availability check — show green tick or red cross in real-time as user types)
+- Bio field (multiline, max 500 chars, character counter)
+- Date of Birth picker (date picker dialog, must be 16+ years old)
+- Gender selector (chip selection: Male, Female, Non-binary, Prefer not to say)
+- "Continue" button — validates all required fields
+
+FILE 4: Create lib/features/auth/presentation/screens/onboarding_steps/step3_interests.dart
+- "What are you into?" heading
+- Grid of interest chips with icons, user can select multiple (min 3):
+  - 🏃 Fitness, 💻 Tech, 🎨 Art, 🎵 Music, 📚 Books, 🍳 Cooking
+  - 🎮 Gaming, 📸 Photography, 🌱 Gardening, 🧘 Yoga, ✈️ Travel
+  - 🐶 Pets, ☕ Coffee, 🎬 Movies, ⚽ Sports, 🏠 Home Decor
+  - 👗 Fashion, 💼 Business, 🎤 Singing, 💃 Dancing, 🖥️ Design
+- Selected chips should have green fill with white text
+- Unselected chips should have white fill with green border
+- Counter showing "X selected (minimum 3)"
+- Add "Looking for" section with toggle chips: Friends, Networking, Dating, Activity Partners (can select multiple)
+- Profession text field
+- "Continue" button (enabled only when min 3 interests selected)
+
+FILE 5: Create lib/features/auth/presentation/screens/onboarding_steps/step4_location_permission.dart
+- THIS IS THE KEY SCREEN — make it amazing
+- Show a beautiful animated map/radar illustration (Lottie animation of a radar scanning or a pin dropping on a map)
+- "Enable Location" heading
+- "Colony works best when we know where you are. We'll show you awesome people and events nearby!" description
+- "Your location is never shared publicly. Only approximate distance is shown to others." privacy note in smaller text
+- Big "Enable Location Access" button (green)
+- When tapped:
+  1. Request location permission using permission_handler
+  2. If granted: Show a beautiful animation — a pulse radiating from center, then mock "finding nearby people" animation
+  3. Get current location using geolocator
+  4. Reverse geocode to get location name
+  5. Show the location name with a pin icon: "📍 Park Street, Patna"
+  6. Update profile in Supabase with lat, lng, location_name
+  7. Show "✓ Location set!" with green checkmark animation
+  8. Auto-proceed to next step after 2 seconds
+  - If denied: Show explanation why location is needed, offer "Open Settings" button
+  - "Why do we need this?" expandable section explaining location usage
+- The animation should feel alive — like the app is actively discovering the neighborhood
+
+FILE 6: Create lib/features/auth/presentation/screens/onboarding_steps/step5_ready.dart
+- "You're all set!" heading with confetti/celebration Lottie animation
+- Show user's profile card preview (avatar, name, username, top 3 interests)
+- "X people are nearby!" (call get_nearby_users and show count)
+- "Enter your Colony →" button with arrow animation
+- Navigate to home screen on tap
+- Mark onboarding as complete in profile (add onboarding_completed field or use shared_preferences)
+
+FILE 7: Create lib/features/auth/presentation/controllers/onboarding_controller.dart
+- Holds all onboarding data: avatar file, name, username, bio, dob, gender, interests, lookingFor, profession, location
+- Methods to update each field
+- Method to save all data to Supabase profile
+- Loading states for each operation
+- Validation for each step
+
+Make all animations smooth (300ms transitions between pages). Use flutter_animate package for entrance animations on each step's elements. Each element should fade+slide in sequentially.
+
+Phase 10 ke baad expect karo:
+
+    5-step beautiful onboarding flow
+    Profile photo upload working
+    Interest selection working
+    Location permission request with animation
+    Reverse geocoding showing location name
+    Profile data saved to Supabase
+
+Test karo:
+
+    Complete full onboarding → check Supabase profiles table → all fields filled
+    Avatar uploaded to storage → check avatars bucket
+    Location permission → lat/lng saved in profile
+    Username availability check → type taken username → red cross
+    Skip phone verification → should still proceed
+    Go back and forth between steps → data persists
+
+PHASE 11: Location Service — Live Tracking & Location Animation
+
+Prompt:
+
+text
+
+Create the real-time location tracking system for Colony app. Location must update continuously while app is in use.
+
+FILE 1: Create lib/core/services/location_service.dart
+A singleton class LocationService:
+
+1. Properties:
+   - StreamSubscription for position updates
+   - Current position (lat, lng)
+   - Current location name (reverse geocoded)
+   - BehaviorSubject/ValueNotifier for location updates (so UI can listen)
+   - bool isTracking
+
+2. Methods:
+   - initialize() — check and request permissions
+   - startTracking() — begin continuous location updates
+     - Use Geolocator.getPositionStream with these settings:
+       - locationSettings: LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 50) — update only when moved 50+ meters
+     - On each position update:
+       a. Update local current position
+       b. Reverse geocode to get readable location name (throttle to max once per 2 minutes)
+       c. Update Supabase profile with new lat, lng, location_name, last_location_update
+       d. Broadcast to listeners
+     - Handle permission denied, service disabled
+   
+   - stopTracking() — cancel position stream subscription
+   
+   - getCurrentPosition() — one-time position fetch with high accuracy
+   
+   - getLocationName(double lat, double lng) → String — reverse geocode
+   
+   - calculateDistance(double lat1, double lng1, double lat2, double lng2) → double — returns meters
+   
+   - checkPermission() → LocationPermission
+   
+   - requestPermission() → LocationPermission
+   
+   - isLocationServiceEnabled() → bool
+   
+   - openLocationSettings() — open device location settings
+   
+   - openAppSettings() — open app permission settings
+
+3. Disposal:
+   - dispose() — clean up stream subscriptions
+
+FILE 2: Create lib/core/widgets/location_header_widget.dart
+A widget that shows at the top of home screen:
+- Pin icon (🗺️ or location pin icon) 
+- Location name text (e.g., "Park Street, Patna")
+- Small pulsing green dot indicating live tracking is active
+- If location not available: show "Tap to enable location" with orange warning icon
+- Tapping when disabled → request permission flow
+- Uses LocationService to listen for updates
+- Smooth text transition animation when location name changes
+
+FILE 3: Create lib/core/widgets/location_radar_widget.dart
+A custom animated widget for the location animation:
+- Shows on app launch (splash/loading) for 2-3 seconds
+- Radar/sonar style pulse animation:
+  - Center: user's avatar or Colony pin icon
+  - 3 concentric circles pulsing outward (green with decreasing opacity)
+  - Small dots appearing on the radar representing nearby people
+  - Smooth, satisfying animation
+- Use CustomPainter for the radar circles
+- Use AnimationController for the pulse effect
+- This widget can be reused: on splash, on location loading, on "finding people" states
+
+FILE 4: Create lib/core/widgets/location_loading_screen.dart
+A full-screen loading overlay that shows when:
+- App is fetching initial location on launch
+- User just granted location permission
+- Location is being updated after a long gap
+Design:
+- Semi-transparent background
+- Center: LocationRadarWidget
+- Below radar: "Finding your colony..." text with typing animation (dots appearing: ... . .. ...)
+- Below that: small text showing current location being resolved
+- Auto-dismiss after location is fetched (max 10 seconds timeout)
+- If location fails: show retry button
+
+FILE 5: Update main.dart / app initialization:
+- After auth check, if user is logged in:
+  1. Show LocationLoadingScreen
+  2. Start LocationService.startTracking()
+  3. Wait for first position (with timeout)
+  4. Then show home screen
+- Location tracking should continue in background while app is active
+- On app lifecycle changes:
+  - resumed → start tracking, set is_online = true
+  - paused → stop tracking, set is_online = false, update last_seen
+  - detached → stop tracking
+
+Use WidgetsBindingObserver to handle app lifecycle. Make sure battery optimization is handled gracefully — if location accuracy drops, show a small banner suggesting the user disable battery optimization for the app.
+
+Phase 11 ke baad expect karo:
+
+    Live location tracking working
+    Location name showing at top of home screen
+    Radar animation on app launch
+    Location updates going to Supabase every 50 meters
+    Online/offline status auto-managed
+    App lifecycle handled properly
+
+Test karo:
+
+    Open app → radar animation → location fetched
+    Check Supabase profiles table → lat/lng updated
+    Move 50+ meters → location should auto-update
+    Kill app → is_online = false in Supabase
+    Open app again → is_online = true
+    Deny location permission → proper error/retry UI
