@@ -19,38 +19,86 @@ These URLs **never change** — they survive WSL restarts, NAT changes, IP chang
 
 ---
 
+## Scripts — Just Two
+
+The entire backend lifecycle is managed by **two intelligent scripts**:
+
+| Script | Purpose |
+|--------|---------|
+| `colony-setup.sh` | **Installer** — Fresh setup, Cloudflare wiring, Tailscale |
+| `colony.sh` | **Daily manager** — Start session, health check, git sync |
+
+---
+
 ## First-Time Setup (run once)
 
 ```bash
 # In WSL — from the project root
-bash backend/scripts/setup.sh              # Full environment: Docker + Coolify + Supabase
-bash backend/scripts/cloudflare-setup.sh  # Permanent tunnel + DNS
+bash backend/scripts/colony-setup.sh              # Install Docker + Coolify + Supabase (idempotent)
+bash backend/scripts/colony-setup.sh --cloudflare # Wire permanent Cloudflare tunnel + DNS
+bash backend/scripts/colony-setup.sh --tailscale  # (Optional) stable IP for device testing
 ```
+
+Each step is **idempotent** — rerunning skips already-completed work.
 
 ---
 
-## Every Dev Session
+## Every Dev Session (after WSL restart)
 
 ```bash
-bash backend/scripts/find-wsl-ip.sh    # Print local URLs (WSL IP changes on restart)
-bash backend/scripts/tunnel.sh start   # Start Cloudflare tunnel
-bash backend/scripts/verify.sh         # Health check all services
+bash backend/scripts/colony.sh start   # Detects IP changes, starts Docker/Supabase, prompts tunnel choice
+bash backend/scripts/colony.sh status  # Full visual health check (pass/warn/fail per service)
+```
+
+### `colony.sh start` — Interactive Tunnel Selection
+
+When you run `start` without a flag, you get a menu:
+
+```
+╔══════════════════════════════════════════════╗
+║   Choose Your Connection Method              ║
+╠══════════════════════════════════════════════╣
+║  [1] Cloudflare Tunnel (Recommended)         ║
+║  [2] Direct Public IP                        ║
+║  [3] Tailscale                               ║
+╚══════════════════════════════════════════════╝
+```
+
+Or skip the prompt with a flag:
+
+```bash
+bash backend/scripts/colony.sh start --cloudflare  # Cloudflare tunnel
+bash backend/scripts/colony.sh start --direct      # Direct IP
+bash backend/scripts/colony.sh start --tailscale   # Tailscale
 ```
 
 ---
 
-## Script Reference
+## Full Command Reference
 
-| Script | When to run | What it does |
-|--------|-------------|--------------|
-| `scripts/setup.sh` | Once | Full env: Docker → Coolify → Supabase |
-| `scripts/cloudflare-setup.sh` | Once | Tunnel + DNS via Cloudflare API |
-| `scripts/tunnel.sh start/stop` | Every session | Manage tunnel daemon |
-| `scripts/tunnel-status.sh` | Any time | Visual health check with HTTP tests |
-| `scripts/find-wsl-ip.sh` | After WSL restart | Refresh local URLs |
-| `scripts/tailscale-setup.sh` | Once (optional) | Stable IP for device testing |
-| `scripts/verify.sh` | Any time | Full pass/fail health check |
-| `push-backend.sh` | After commits | Sync to colony_backend repo |
+### `colony-setup.sh` — Installer
+
+```bash
+bash backend/scripts/colony-setup.sh              # Full fresh setup
+bash backend/scripts/colony-setup.sh --cloudflare # Wire Cloudflare tunnel (run once)
+bash backend/scripts/colony-setup.sh --tailscale  # Install & connect Tailscale
+bash backend/scripts/colony-setup.sh --check      # Check prerequisites only (no installs)
+```
+
+### `colony.sh` — Session Manager
+
+```bash
+bash backend/scripts/colony.sh start              # Start session (interactive)
+bash backend/scripts/colony.sh start --cloudflare # Start Cloudflare tunnel
+bash backend/scripts/colony.sh start --direct     # Direct IP mode
+bash backend/scripts/colony.sh start --tailscale  # Tailscale mode
+bash backend/scripts/colony.sh stop               # Stop tunnel daemon
+bash backend/scripts/colony.sh restart            # Stop + start
+bash backend/scripts/colony.sh status             # Full health check
+bash backend/scripts/colony.sh logs               # Tail Cloudflare tunnel logs
+bash backend/scripts/colony.sh ip                 # Print WSL/public/Tailscale IPs
+bash backend/scripts/colony.sh sync "message"     # Commit + push to both repos
+```
 
 ---
 
@@ -67,9 +115,8 @@ bash backend/scripts/verify.sh         # Health check all services
   - Realtime (WebSocket broadcasts)
   - Storage (file uploads)
   - Kong (API Gateway)
-  - Edge Functions
-- **Cloudflare Tunnel** — Permanent public URLs, no port forwarding
-- **Tailscale** — Stable IP for local device testing
+- **Cloudflare Tunnel** — Permanent public URLs, no port forwarding required
+- **Tailscale** — Stable 100.x IP for local device testing
 
 ---
 
@@ -77,11 +124,21 @@ bash backend/scripts/verify.sh         # Health check all services
 
 This `backend/` folder is a **git subtree** of [colony-app](https://github.com/devamskshinde/colony-app).
 
-- `colony-app` contains **everything** (frontend + backend)
-- `colony_backend` contains **backend only** (this folder)
+- `colony-app` — everything (frontend + backend)
+- `colony-backend` — backend only (this folder)
 
 To sync after committing:
 
 ```bash
-bash push-backend.sh "your commit message"
+bash backend/scripts/colony.sh sync "your commit message"
 ```
+
+---
+
+## Generated Environment Files
+
+| File | Contents | When created |
+|------|----------|-------------|
+| `backend/.env.local` | WSL IP, local service URLs | Every `colony.sh start` |
+| `backend/.env.tunnel` | Permanent public URLs | `colony-setup.sh --cloudflare` |
+| `~/.cloudflared/config.yml` | cloudflared tunnel config | `colony-setup.sh --cloudflare` |
