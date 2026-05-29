@@ -749,14 +749,64 @@ case "$MODE" in
         print_full_summary
         ;;
 
-    *)
-        echo "Colony Intelligent Installer"
+    --schema|-s)
+        banner "Colony — Apply Database Schema"
+        APPLY_SCRIPT="${SCRIPT_DIR}/apply-schema.sh"
+        if [[ ! -f "$APPLY_SCRIPT" ]]; then
+            fatal "apply-schema.sh not found at ${APPLY_SCRIPT}"
+        fi
+        # Pass --verify flag if given as second arg
+        SCHEMA_FLAG="${2:-}"
+        if [[ "$SCHEMA_FLAG" == "--verify" ]]; then
+            bash "$APPLY_SCRIPT" --verify
+        else
+            bash "$APPLY_SCRIPT"
+        fi
+        ;;
+
+    --help|-h|help)
         echo ""
-        echo "Usage:"
-        echo "  bash scripts/colony-setup.sh              # Full fresh setup (idempotent)"
-        echo "  bash scripts/colony-setup.sh --cloudflare # Wire Cloudflare tunnel (run once)"
-        echo "  bash scripts/colony-setup.sh --tailscale  # Install & connect Tailscale"
-        echo "  bash scripts/colony-setup.sh --check      # Check prerequisites only"
+        echo -e "${BOLD}${CYAN}Colony Intelligent Installer${RESET}  — colony-setup.sh"
+        echo ""
+        echo -e "${BOLD}Usage:${RESET}"
+        echo -e "  bash scripts/colony-setup.sh              ${CYAN}# Full fresh setup (idempotent)${RESET}"
+        echo -e "  bash scripts/colony-setup.sh --cloudflare ${CYAN}# Wire Cloudflare tunnel + DNS (run once)${RESET}"
+        echo -e "  bash scripts/colony-setup.sh --tailscale  ${CYAN}# Install & connect Tailscale (optional)${RESET}"
+        echo -e "  bash scripts/colony-setup.sh --check      ${CYAN}# Check prerequisites, no installs${RESET}"
+        echo -e "  bash scripts/colony-setup.sh --schema     ${CYAN}# Apply DB migrations + seeds (Phase 1.1)${RESET}"
+        echo -e "  bash scripts/colony-setup.sh --schema --verify ${CYAN}# Apply DB + run verify-schema.sh${RESET}"
+        echo -e "  bash scripts/colony-setup.sh --help       ${CYAN}# Show this help${RESET}"
+        echo ""
+        echo -e "${BOLD}What each mode does:${RESET}"
+        echo -e "  ${GREEN}(no flag)${RESET}      Runs full setup in order:"
+        echo -e "               A1 Prerequisites → A2 Docker → A3 Coolify → A4 Supabase → A5 Health wait → A6 DB setup"
+        echo -e "               Each step is idempotent — already-installed tools are skipped."
+        echo ""
+        echo -e "  ${GREEN}--cloudflare${RESET}   One-time Cloudflare tunnel wiring:"
+        echo -e "               B1 Install cloudflared → B2 Authenticate → B3 Create tunnel"
+        echo -e "               B4 Write config.yml → B5 Create DNS CNAMEs → B6 Write .env.tunnel"
+        echo ""
+        echo -e "  ${GREEN}--tailscale${RESET}    Tailscale setup for stable device IP:"
+        echo -e "               C1 Install Tailscale → C2 Start daemon → C3 Authenticate"
+        echo -e "               C4 Configure subnet routing → Update .env.local"
+        echo ""
+        echo -e "  ${GREEN}--check${RESET}        Prerequisite check only (curl, git, python3, jq, docker)"
+        echo -e "               No installs — just reports what is/isn't present."
+        echo ""
+        echo -e "${BOLD}Generated files:${RESET}"
+        echo -e "  backend/.env.local   WSL IP and local URLs  (every colony.sh start)"
+        echo -e "  backend/.env.tunnel  Permanent public URLs  (colony-setup.sh --cloudflare)"
+        echo ""
+        echo -e "${BOLD}Daily workflow (after first-time setup):${RESET}"
+        echo -e "  bash scripts/colony.sh start   ${CYAN}# start tunnel + services${RESET}"
+        echo -e "  bash scripts/colony.sh status  ${CYAN}# health check${RESET}"
+        echo ""
+        exit 0
+        ;;
+
+    *)
+        error "Unknown flag: ${MODE}"
+        echo "Run: bash scripts/colony-setup.sh --help"
         exit 1
         ;;
 esac
