@@ -1,0 +1,5 @@
+cloudflare.config.sh
+.env.local
+.cloudflared/
+logs/
+*.log
