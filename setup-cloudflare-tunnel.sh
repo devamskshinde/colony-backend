@@ -79,6 +79,21 @@ bool_json() {
   esac
 }
 
+duration_seconds() {
+  local value="${1,,}"
+  if [[ "$value" =~ ^([0-9]+)$ ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  elif [[ "$value" =~ ^([0-9]+)s$ ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+  elif [[ "$value" =~ ^([0-9]+)m$ ]]; then
+    printf '%s' "$((BASH_REMATCH[1] * 60))"
+  elif [[ "$value" =~ ^([0-9]+)h$ ]]; then
+    printf '%s' "$((BASH_REMATCH[1] * 3600))"
+  else
+    die "Invalid duration '$1'. Use seconds like 30, 30s, 2m, or 1h."
+  fi
+}
+
 urlencode() {
   jq -rn --arg v "$1" '$v|@uri'
 }
@@ -496,10 +511,10 @@ put_tunnel_config() {
       --arg apiService "$(service_url_for api)" \
       --arg adminService "$(service_url_for admin)" \
       --arg studioService "$(service_url_for studio)" \
-      --arg connectTimeout "$CF_ORIGIN_CONNECT_TIMEOUT" \
-      --arg tlsTimeout "$CF_ORIGIN_TLS_TIMEOUT" \
-      --arg tcpKeepAlive "$CF_ORIGIN_TCP_KEEPALIVE" \
-      --arg keepAliveTimeout "$CF_ORIGIN_KEEPALIVE_TIMEOUT" \
+      --argjson connectTimeout "$(duration_seconds "$CF_ORIGIN_CONNECT_TIMEOUT")" \
+      --argjson tlsTimeout "$(duration_seconds "$CF_ORIGIN_TLS_TIMEOUT")" \
+      --argjson tcpKeepAlive "$(duration_seconds "$CF_ORIGIN_TCP_KEEPALIVE")" \
+      --argjson keepAliveTimeout "$(duration_seconds "$CF_ORIGIN_KEEPALIVE_TIMEOUT")" \
       --arg keepAliveConnections "$CF_ORIGIN_KEEPALIVE_CONNECTIONS" \
       --argjson noTLSVerify "$(bool_json "$CF_ORIGIN_NO_TLS_VERIFY")" \
       --argjson disableChunkedEncoding "$(bool_json "$CF_ORIGIN_DISABLE_CHUNKED_ENCODING")" \
