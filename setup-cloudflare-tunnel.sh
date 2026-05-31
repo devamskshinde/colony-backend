@@ -1183,24 +1183,26 @@ EOF
 }
 
 install_wsl_startup_launcher() {
-  local distro="$1" runner="$2" ps_script
-  ps_script="$(cat <<EOF
-\$ErrorActionPreference = "Stop"
-\$Distro = $(ps_single_quote "$distro")
-\$Runner = $(ps_single_quote "$runner")
-\$Startup = [Environment]::GetFolderPath("Startup")
-\$Launcher = Join-Path \$Startup "ColonyCloudflareTunnel.cmd"
-\$Content = @(
-  "@echo off",
-  "start `"`" /min wsl.exe -d `"\$Distro`" -- bash `"\$Runner`""
-)
-Set-Content -LiteralPath \$Launcher -Value \$Content -Encoding ASCII
-Start-Process -WindowStyle Hidden -FilePath "wsl.exe" -ArgumentList @("-d", \$Distro, "--", "bash", \$Runner)
-Write-Host "Startup launcher installed at \$Launcher"
-EOF
-)"
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ps_script" || die "Could not install Windows Startup launcher. Run './setup-cloudflare-tunnel.sh run' manually, or rerun service-install from an elevated shell."
-  ok "Startup launcher installed. Logs: $LOG_DIR/cloudflared.log"
+  local distro="$1" runner="$2" startup_win startup_dir launcher
+  have wslpath || die "wslpath is required to install the Windows Startup launcher from WSL."
+
+  startup_win="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Startup")' | tr -d '\r' | tail -n 1)"
+  [[ -n "$startup_win" ]] || die "Could not resolve the Windows Startup folder."
+
+  startup_dir="$(wslpath -u "$startup_win")"
+  launcher="$startup_dir/ColonyCloudflareTunnel.cmd"
+  mkdir -p "$startup_dir"
+
+  {
+    printf '@echo off\r\n'
+    printf 'start "" /min wsl.exe -d "%s" -- bash "%s"\r\n' "$distro" "$runner"
+  } >"$launcher"
+
+  powershell.exe -NoProfile -Command 'Start-Process -WindowStyle Hidden -FilePath "wsl.exe" -ArgumentList @("-d","'"$distro"'","--","bash","'"$runner"'")' \
+    || die "Could not launch tunnel through Windows Startup fallback. Run './setup-cloudflare-tunnel.sh run' manually, or rerun service-install from an elevated shell."
+
+  ok "Startup launcher installed at $launcher"
+  ok "Tunnel launched. Logs: $LOG_DIR/cloudflared.log"
 }
 
 verify_dns_record() {
