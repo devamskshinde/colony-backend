@@ -205,6 +205,16 @@ shell_quote() {
   printf '%q' "$1"
 }
 
+explain_cloudflare_token_shape() {
+  local token="${1:-}"
+  if [[ "$token" == cfat_* ]]; then
+    warn "This token starts with 'cfat_'. That does not look like a Cloudflare dashboard API Token for the v4 REST API."
+    warn "Create a token from Cloudflare Dashboard -> My Profile -> API Tokens -> Create Token -> Custom token."
+  elif [[ "$token" == *" "* ]]; then
+    warn "The token contains spaces. Paste only the raw token value, without 'Bearer', quotes, or extra text."
+  fi
+}
+
 write_secret_assignment() {
   local key="$1" value="$2"
   local tmp
@@ -245,6 +255,7 @@ ensure_cloudflare_token() {
     case "${choice:-Y}" in
       y|Y|yes|YES)
         ok "Using saved Cloudflare API token"
+        explain_cloudflare_token_shape "$CF_API_TOKEN"
         return 0
         ;;
     esac
@@ -256,6 +267,7 @@ ensure_cloudflare_token() {
   IFS= read -r token
   [[ -n "$token" ]] || die "Cloudflare API token cannot be empty."
   CF_API_TOKEN="$token"
+  explain_cloudflare_token_shape "$CF_API_TOKEN"
 
   printf 'Save it to %s for this device? [Y/n]: ' "$SECRETS_FILE" >&2
   IFS= read -r save_choice
@@ -402,6 +414,7 @@ check_cloudflare_token_nonfatal() {
     return 0
   fi
   warn "Cloudflare API token check failed with HTTP $http_code"
+  explain_cloudflare_token_shape "$CF_API_TOKEN"
   if jq -e . >/dev/null 2>&1 <<<"$response_body"; then
     messages="$(jq -r '(.errors // [])[]? | "- code \(.code): \(.message)"' <<<"$response_body")"
     [[ -n "$messages" ]] && printf '%s\n' "$messages" >&2
