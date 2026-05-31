@@ -19,7 +19,7 @@ The script can install/check Coolify in WSL, create or reuse a permanent Cloudfl
 - `.env.local`: generated machine-local WSL/Coolify state. This is ignored because WSL IPs can change.
 - `setup-cloudflare-tunnel.sh`: one script for Coolify install/status, tunnel setup, tunnel run, service install, verification, and diagnostics.
 
-On a new device, pull the repo and run the script. When a Cloudflare command needs the API token, it asks for it once and can save it locally into ignored `cloudflare.secrets.sh`.
+On a new device, pull the repo and run the setup script. When a Cloudflare command needs the API token, it asks for it once and can save it locally into ignored `cloudflare.secrets.sh`.
 
 ## Coolify And WSL Notes
 
@@ -44,7 +44,6 @@ If you choose direct-port mode later, set `CF_ROUTE_MODE="ports"` and update `CF
 ```bash
 ./setup-cloudflare-tunnel.sh all
 ./setup-cloudflare-tunnel.sh install-coolify
-./setup-cloudflare-tunnel.sh configure-secrets
 ./setup-cloudflare-tunnel.sh setup
 ./setup-cloudflare-tunnel.sh tunnel
 ./setup-cloudflare-tunnel.sh tailscale

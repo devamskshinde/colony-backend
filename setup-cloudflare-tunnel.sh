@@ -41,7 +41,6 @@ usage() {
 Usage:
   ./setup-cloudflare-tunnel.sh all                Install/check Coolify, create tunnel/DNS, write env files
   ./setup-cloudflare-tunnel.sh install-coolify    Install or verify Coolify inside Linux/WSL
-  ./setup-cloudflare-tunnel.sh configure-secrets  Prompt for local-only secrets
   ./setup-cloudflare-tunnel.sh setup              Create/update tunnel, DNS, and .env.tunnel
   ./setup-cloudflare-tunnel.sh tunnel             Choose Cloudflare, Tailscale, or direct IP interactively
   ./setup-cloudflare-tunnel.sh run                Run cloudflared in the foreground
@@ -226,7 +225,7 @@ ensure_cloudflare_token() {
   fi
 
   if [[ ! -t 0 ]]; then
-    die "Missing CF_API_TOKEN. Run './setup-cloudflare-tunnel.sh configure-secrets' on this device or export CF_API_TOKEN."
+    die "Missing CF_API_TOKEN. Run './setup-cloudflare-tunnel.sh setup' in an interactive terminal so it can ask for the token, or export CF_API_TOKEN."
   fi
 
   warn "Cloudflare API token is required for tunnel/DNS commands."
@@ -256,23 +255,6 @@ ensure_cloudflare_token() {
       warn "Token kept only for this run."
       ;;
   esac
-}
-
-configure_secrets() {
-  source_config
-  ensure_cloudflare_token 1
-
-  if [[ -t 0 ]]; then
-    printf 'Optional Tailscale auth key for unattended setup (blank to skip, input hidden): ' >&2
-    local ts_key
-    IFS= read -r -s ts_key
-    printf '\n' >&2
-    if [[ -n "$ts_key" ]]; then
-      TAILSCALE_AUTHKEY="$ts_key"
-      write_secret_assignment "TAILSCALE_AUTHKEY" "$TAILSCALE_AUTHKEY"
-      ok "Saved TAILSCALE_AUTHKEY to $SECRETS_FILE"
-    fi
-  fi
 }
 
 install_missing_deps_if_allowed() {
@@ -1314,7 +1296,6 @@ main() {
   case "$command" in
     all) setup_all ;;
     install-coolify) install_coolify ;;
-    configure-secrets) configure_secrets ;;
     setup) setup_tunnel ;;
     tunnel) interactive_tunnel ;;
     run) run_tunnel ;;
