@@ -44,7 +44,7 @@ Usage:
   ./setup-cloudflare-tunnel.sh setup              Create/update tunnel, DNS, and .env.tunnel
   ./setup-cloudflare-tunnel.sh tunnel             Choose Cloudflare, Tailscale, or direct IP interactively
   ./setup-cloudflare-tunnel.sh run                Run cloudflared in the foreground
-  ./setup-cloudflare-tunnel.sh service-install    Install autostart service or WSL scheduled task
+  ./setup-cloudflare-tunnel.sh start              Start cloudflared in the background for this login session
   ./setup-cloudflare-tunnel.sh install-cloudflared Install cloudflared on Linux/WSL
   ./setup-cloudflare-tunnel.sh tailscale          Install/connect Tailscale and write .env.tunnel
   ./setup-cloudflare-tunnel.sh verify             Verify Cloudflare tunnel, DNS records, and local ports
@@ -220,12 +220,6 @@ shell_quote() {
   printf '%q' "$1"
 }
 
-ps_single_quote() {
-  local value="$1"
-  value="${value//\'/\'\'}"
-  printf "'%s'" "$value"
-}
-
 explain_cloudflare_token_shape() {
   local token="${1:-}"
   if [[ "$token" == cfat_* ]]; then
@@ -279,6 +273,9 @@ ensure_cloudflare_token() {
   fi
 
   if [[ -n "${CF_API_TOKEN:-}" ]]; then
+    if [[ "${CF_TOKEN_CONFIRMED:-0}" == "1" ]]; then
+      return 0
+    fi
     warn "A saved Cloudflare API token was found."
     printf 'Use saved token? [Y/n]: ' >&2
     IFS= read -r choice
@@ -446,6 +443,7 @@ check_cloudflare_token_nonfatal() {
   http_code="${response##*$'\n'}"
   response_body="${response%$'\n'*}"
   if [[ "$http_code" -ge 200 && "$http_code" -lt 300 ]] && jq -e '.success == true' >/dev/null 2>&1 <<<"$response_body"; then
+    CF_TOKEN_CONFIRMED="1"
     ok "Cloudflare API token verified"
     return 0
   fi
@@ -1064,7 +1062,9 @@ EOF
 setup_all() {
   install_coolify
   setup_tunnel
-  ok "All-in-one setup finished. Run './setup-cloudflare-tunnel.sh service-install' once to autostart cloudflared after restart."
+  start_tunnel_background
+  ok "All-in-one setup finished. Public URLs are permanent and the tunnel connector has been started for this login session."
+  warn "After a Windows/WSL restart, run './setup-cloudflare-tunnel.sh start' again to start the connector."
 }
 
 setup_tunnel() {
@@ -1092,7 +1092,7 @@ setup_tunnel() {
   printf '  Admin panel:     %s\n' "$ADMIN_PANEL_URL" >&2
   printf '  Supabase Studio: %s\n' "$SUPABASE_STUDIO_URL" >&2
   warn "Manual verification: Cloudflare dashboard -> $CF_DOMAIN_NORMALIZED -> DNS -> confirm the three CNAME records point to $target."
-  warn "Run './setup-cloudflare-tunnel.sh service-install' to keep the connector alive after restart, or './setup-cloudflare-tunnel.sh run' for foreground mode."
+  warn "Run './setup-cloudflare-tunnel.sh start' to start the connector in the background, or './setup-cloudflare-tunnel.sh run' for foreground mode."
 }
 
 run_tunnel() {
@@ -1112,97 +1112,38 @@ run_tunnel() {
   exec cloudflared tunnel --no-autoupdate run --token "$token"
 }
 
+start_tunnel_background() {
+  source_config
+  ensure_core_deps
+  source_tunnel_env_if_present
+  verify_cloudflare_token_or_prompt
+  ensure_cloudflared
+  mkdir -p "$LOG_DIR"
+
+  if pgrep -f "cloudflared.*tunnel.*run" >/dev/null 2>&1; then
+    ok "cloudflared tunnel connector already appears to be running"
+    return 0
+  fi
+
+  log "Starting cloudflared in the background for this login session"
+  nohup "$SCRIPT_PATH" run >> "$LOG_DIR/cloudflared.log" 2>&1 &
+  sleep 2
+
+  if pgrep -f "cloudflared.*tunnel.*run" >/dev/null 2>&1; then
+    ok "cloudflared started. Logs: $LOG_DIR/cloudflared.log"
+  else
+    warn "cloudflared did not stay running. Check logs: $LOG_DIR/cloudflared.log"
+  fi
+}
+
 is_wsl() {
   [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null
 }
 
 service_install() {
-  source_config
-  ensure_core_deps
-  source_tunnel_env_if_present
-  verify_cloudflare_token_or_prompt
-  local tunnel_id="${TUNNEL_ID:-}"
-  [[ -n "$tunnel_id" ]] || tunnel_id="$(find_tunnel_id)"
-  [[ -n "$tunnel_id" ]] || die "No tunnel found. Run './setup-cloudflare-tunnel.sh setup' first."
-  ensure_cloudflared
-
-  if is_wsl; then
-    install_wsl_scheduled_task
-    return 0
-  fi
-
-  if [[ "$(uname -s)" == "Linux" && -d /run/systemd/system ]] && have systemctl; then
-    local token
-    token="$(get_tunnel_token "$tunnel_id")"
-    log "Installing cloudflared systemd service"
-    sudo cloudflared service install "$token"
-    sudo systemctl enable --now cloudflared
-    ok "cloudflared system service is installed and running"
-    return 0
-  fi
-
-  die "No supported autostart method detected. Use './setup-cloudflare-tunnel.sh run' or enable systemd in WSL."
-}
-
-install_wsl_scheduled_task() {
-  have powershell.exe || die "powershell.exe not available from WSL. Run foreground mode or enable WSL interop."
-  local distro task_name runner ps_script
-  distro="${WSL_DISTRO_NAME:-}"
-  [[ -n "$distro" ]] || die "WSL_DISTRO_NAME is missing; cannot create a Windows scheduled task safely."
-  task_name="${CF_WSL_TASK_NAME:-ColonyCloudflareTunnel}"
-  mkdir -p "$STATE_DIR" "$LOG_DIR"
-  runner="$STATE_DIR/run-cloudflared.sh"
-  cat >"$runner" <<EOF
-#!/usr/bin/env bash
-set -Eeuo pipefail
-cd "$SCRIPT_DIR"
-exec "$SCRIPT_PATH" run >> "$LOG_DIR/cloudflared.log" 2>&1
-EOF
-  chmod 700 "$runner"
-
-  log "Registering Windows scheduled task '$task_name' for WSL distro '$distro'"
-  ps_script="$(cat <<EOF
-\$ErrorActionPreference = "Stop"
-\$TaskName = $(ps_single_quote "$task_name")
-\$Distro = $(ps_single_quote "$distro")
-\$Runner = $(ps_single_quote "$runner")
-\$action = New-ScheduledTaskAction -Execute "wsl.exe" -Argument "-d \`"\$Distro\`" -- bash \`"\$Runner\`""
-\$trigger = New-ScheduledTaskTrigger -AtLogOn
-\$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
-Register-ScheduledTask -TaskName \$TaskName -Action \$action -Trigger \$trigger -Settings \$settings -Description "Colony backend Cloudflare tunnel connector" -Force | Out-Null
-Start-ScheduledTask -TaskName \$TaskName
-EOF
-)"
-  if powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ps_script"; then
-    ok "Scheduled task installed. Logs: $LOG_DIR/cloudflared.log"
-    return 0
-  fi
-
-  warn "Windows denied Scheduled Task creation. Falling back to a per-user Startup launcher."
-  install_wsl_startup_launcher "$distro" "$runner"
-}
-
-install_wsl_startup_launcher() {
-  local distro="$1" runner="$2" startup_win startup_dir launcher
-  have wslpath || die "wslpath is required to install the Windows Startup launcher from WSL."
-
-  startup_win="$(powershell.exe -NoProfile -Command '[Environment]::GetFolderPath("Startup")' | tr -d '\r' | tail -n 1)"
-  [[ -n "$startup_win" ]] || die "Could not resolve the Windows Startup folder."
-
-  startup_dir="$(wslpath -u "$startup_win")"
-  launcher="$startup_dir/ColonyCloudflareTunnel.cmd"
-  mkdir -p "$startup_dir"
-
-  {
-    printf '@echo off\r\n'
-    printf 'start "" /min wsl.exe -d "%s" -- bash "%s"\r\n' "$distro" "$runner"
-  } >"$launcher"
-
-  powershell.exe -NoProfile -Command 'Start-Process -WindowStyle Hidden -FilePath "wsl.exe" -ArgumentList @("-d","'"$distro"'","--","bash","'"$runner"'")' \
-    || die "Could not launch tunnel through Windows Startup fallback. Run './setup-cloudflare-tunnel.sh run' manually, or rerun service-install from an elevated shell."
-
-  ok "Startup launcher installed at $launcher"
-  ok "Tunnel launched. Logs: $LOG_DIR/cloudflared.log"
+  warn "service-install was removed because Windows/WSL autostart is unreliable without admin/systemd setup."
+  warn "The URL and DNS stay permanent. Use './setup-cloudflare-tunnel.sh start' after login/restart to run the connector."
+  start_tunnel_background
 }
 
 verify_dns_record() {
@@ -1426,6 +1367,7 @@ main() {
     setup) setup_tunnel ;;
     tunnel) interactive_tunnel ;;
     run) run_tunnel ;;
+    start) start_tunnel_background ;;
     service-install) service_install ;;
     install-cloudflared) source_config; install_cloudflared ;;
     tailscale) tailscale_setup ;;

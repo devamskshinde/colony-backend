@@ -7,7 +7,7 @@ cd backend
 ./setup-cloudflare-tunnel.sh all
 ```
 
-The script can install/check Coolify in WSL, create or reuse a permanent Cloudflare Tunnel, write Cloudflare DNS records, emit `.env.tunnel`, update `.env.local` with the current WSL IP, and install a restart-safe cloudflared connector.
+The script can install/check Coolify in WSL, create or reuse a permanent Cloudflare Tunnel, write Cloudflare DNS records, emit `.env.tunnel`, update `.env.local` with the current WSL IP, and start the cloudflared connector when needed.
 
 ## Files
 
@@ -17,7 +17,7 @@ The script can install/check Coolify in WSL, create or reuse a permanent Cloudfl
 - `cloudflare.secrets.example.sh`: safe secrets template.
 - `.env.tunnel`: generated after setup. It contains permanent URLs and can be sourced by later scripts.
 - `.env.local`: generated machine-local WSL/Coolify state. This is ignored because WSL IPs can change.
-- `setup-cloudflare-tunnel.sh`: one script for Coolify install/status, tunnel setup, tunnel run, service install, verification, and diagnostics.
+- `setup-cloudflare-tunnel.sh`: one script for Coolify install/status, tunnel setup, tunnel run/start, verification, and diagnostics.
 
 On a new device, pull the repo and run the setup script. When a Cloudflare command needs the API token, it asks for it once in visible text, checks it with Cloudflare, and can save it locally into ignored `cloudflare.secrets.sh`. If a saved token already exists, the script asks whether to reuse it or paste a new one.
 
@@ -57,7 +57,7 @@ If you choose direct-port mode later, set `CF_ROUTE_MODE="ports"` and update `CF
 ./setup-cloudflare-tunnel.sh setup
 ./setup-cloudflare-tunnel.sh tunnel
 ./setup-cloudflare-tunnel.sh tailscale
-./setup-cloudflare-tunnel.sh service-install
+./setup-cloudflare-tunnel.sh start
 ./setup-cloudflare-tunnel.sh verify
 ./setup-cloudflare-tunnel.sh doctor
 ./setup-cloudflare-tunnel.sh coolify-status
@@ -69,6 +69,14 @@ For a foreground tunnel test:
 ```bash
 ./setup-cloudflare-tunnel.sh run
 ```
+
+For normal development after reboot/login:
+
+```bash
+./setup-cloudflare-tunnel.sh start
+```
+
+The Cloudflare URLs do not change when you rerun `all` or `setup`. The named tunnel and DNS records are permanent. `all` also starts the local `cloudflared` connector for the current login session. After a Windows/WSL restart, run `./setup-cloudflare-tunnel.sh start` again.
 
 For direct public IP diagnostics:
 
