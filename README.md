@@ -53,6 +53,7 @@ If you choose direct-port mode later, set `CF_ROUTE_MODE="ports"` and update `CF
 
 ```bash
 ./setup-cloudflare-tunnel.sh all
+./setup-cloudflare-tunnel.sh cloud-shell
 ./setup-cloudflare-tunnel.sh install-coolify
 ./setup-cloudflare-tunnel.sh setup
 ./setup-cloudflare-tunnel.sh tunnel
@@ -77,6 +78,38 @@ For normal development after reboot/login:
 ```
 
 The Cloudflare URLs do not change when you rerun `all` or `setup`. The named tunnel and DNS records are permanent. `all` also starts the local `cloudflared` connector for the current login session. After a Windows/WSL restart, run `./setup-cloudflare-tunnel.sh start` again.
+
+## Google Cloud Shell
+
+Cloud Shell is good for quick testing, but it is not a permanent backend host. Google gives you a temporary Debian-based VM for the active session; after inactivity the session stops and the VM is discarded. Your `$HOME` persists, but running processes and containers do not.
+
+For Cloud Shell testing:
+
+```bash
+git clone https://github.com/devamskshinde/colony-backend.git
+cd colony-backend
+./setup-cloudflare-tunnel.sh cloud-shell
+```
+
+Cloud Shell mode skips Coolify and uses direct local ports. Run your API on:
+
+```text
+127.0.0.1:8080
+```
+
+Then start or restart the connector:
+
+```bash
+./setup-cloudflare-tunnel.sh start
+```
+
+Your URL stays the same:
+
+```text
+https://api.ilovespdf.in
+```
+
+When Cloud Shell restarts, start your API again and rerun `./setup-cloudflare-tunnel.sh start`. If you later go back to WSL/Coolify, rerun `./setup-cloudflare-tunnel.sh all` there and the same public URLs will point back to the WSL Coolify proxy.
 
 For direct public IP diagnostics:
 

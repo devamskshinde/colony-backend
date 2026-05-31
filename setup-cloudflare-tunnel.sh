@@ -40,6 +40,7 @@ usage() {
   cat <<'USAGE'
 Usage:
   ./setup-cloudflare-tunnel.sh all                Install/check Coolify, create tunnel/DNS, write env files
+  ./setup-cloudflare-tunnel.sh cloud-shell        Configure/start tunnel for Google Cloud Shell testing
   ./setup-cloudflare-tunnel.sh install-coolify    Install or verify Coolify inside Linux/WSL
   ./setup-cloudflare-tunnel.sh setup              Create/update tunnel, DNS, and .env.tunnel
   ./setup-cloudflare-tunnel.sh tunnel             Choose Cloudflare, Tailscale, or direct IP interactively
@@ -200,6 +201,14 @@ source_config() {
   TAILSCALE_HOSTNAME="${TAILSCALE_HOSTNAME:-colony-backend-wsl}"
   TAILSCALE_AUTHKEY="${TAILSCALE_AUTHKEY:-}"
   TAILSCALE_ACCEPT_DNS="${TAILSCALE_ACCEPT_DNS:-false}"
+
+  if { is_cloud_shell || [[ "${COLONY_CLOUD_SHELL_MODE:-0}" == "1" ]]; } && [[ "${COLONY_FORCE_COOLIFY_MODE:-0}" != "1" ]]; then
+    CF_ROUTE_MODE="ports"
+    CF_ORIGIN_HOST="127.0.0.1"
+    CF_API_PORT="${CF_API_PORT:-8080}"
+    CF_ADMIN_PORT="${CF_ADMIN_PORT:-3000}"
+    CF_STUDIO_PORT="${CF_STUDIO_PORT:-54323}"
+  fi
 
   API_HOSTNAME="$(fqdn "$CF_API_SUBDOMAIN")"
   ADMIN_HOSTNAME="$(fqdn "$CF_ADMIN_SUBDOMAIN")"
@@ -723,6 +732,10 @@ is_linux() {
   [[ "$(uname -s 2>/dev/null || true)" == "Linux" ]]
 }
 
+is_cloud_shell() {
+  [[ "${CLOUD_SHELL:-}" == "true" || -n "${WEB_HOST:-}" || -n "${DEVSHELL_PROJECT_ID:-}" ]]
+}
+
 detect_wsl_ip() {
   local ip=""
   if have hostname; then
@@ -1060,11 +1073,37 @@ EOF
 }
 
 setup_all() {
-  install_coolify
+  if is_cloud_shell; then
+    warn "Google Cloud Shell detected. Skipping Coolify install because Cloud Shell VMs are temporary and stop after inactivity."
+    configure_cloud_shell_mode
+  else
+    install_coolify
+  fi
   setup_tunnel
   start_tunnel_background
   ok "All-in-one setup finished. Public URLs are permanent and the tunnel connector has been started for this login session."
-  warn "After a Windows/WSL restart, run './setup-cloudflare-tunnel.sh start' again to start the connector."
+  warn "After a restart/new Cloud Shell session, run './setup-cloudflare-tunnel.sh start' again to start the connector."
+}
+
+configure_cloud_shell_mode() {
+  COLONY_CLOUD_SHELL_MODE="1"
+  source_config
+  warn "Cloud Shell mode uses direct local ports instead of Coolify proxy routing."
+  warn "Run your API in Cloud Shell on 127.0.0.1:${CF_API_PORT:-8080}; update CF_API_PORT in cloudflare.config.sh if needed."
+  CF_ROUTE_MODE="ports"
+  CF_ORIGIN_HOST="127.0.0.1"
+  CF_API_PORT="${CF_API_PORT:-8080}"
+  CF_ADMIN_PORT="${CF_ADMIN_PORT:-3000}"
+  CF_STUDIO_PORT="${CF_STUDIO_PORT:-54323}"
+  CF_REQUIRE_LOCAL_PORTS="${CF_REQUIRE_LOCAL_PORTS:-0}"
+}
+
+setup_cloud_shell() {
+  configure_cloud_shell_mode
+  setup_tunnel
+  start_tunnel_background
+  ok "Cloud Shell tunnel is configured. Remember: Cloud Shell stops after inactivity, but DNS/URLs stay permanent."
+  warn "When you open a new Cloud Shell session, start your API and run './setup-cloudflare-tunnel.sh start'."
 }
 
 setup_tunnel() {
@@ -1363,6 +1402,7 @@ main() {
   local command="${1:-setup}"
   case "$command" in
     all) setup_all ;;
+    cloud-shell) setup_cloud_shell ;;
     install-coolify) install_coolify ;;
     setup) setup_tunnel ;;
     tunnel) interactive_tunnel ;;
