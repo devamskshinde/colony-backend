@@ -57,3 +57,9 @@ COOLIFY_FORCE_INSTALL="0"
 COOLIFY_ROOT_USERNAME=""
 COOLIFY_ROOT_EMAIL=""
 COOLIFY_ROOT_PASSWORD=""
+
+# Optional Tailscale device-testing mode. TAILSCALE_AUTHKEY is a secret; keep
+# it only in the ignored cloudflare.config.sh if you use it.
+TAILSCALE_HOSTNAME="colony-backend-wsl"
+TAILSCALE_AUTHKEY=""
+TAILSCALE_ACCEPT_DNS="false"

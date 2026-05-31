@@ -41,6 +41,8 @@ If you choose direct-port mode later, set `CF_ROUTE_MODE="ports"` and update `CF
 ./setup-cloudflare-tunnel.sh all
 ./setup-cloudflare-tunnel.sh install-coolify
 ./setup-cloudflare-tunnel.sh setup
+./setup-cloudflare-tunnel.sh tunnel
+./setup-cloudflare-tunnel.sh tailscale
 ./setup-cloudflare-tunnel.sh service-install
 ./setup-cloudflare-tunnel.sh verify
 ./setup-cloudflare-tunnel.sh doctor
@@ -61,6 +63,14 @@ For direct public IP diagnostics:
 ```
 
 Direct IP is only a fallback. If your ISP uses CGNAT or your IP changes, direct IP will break. Cloudflare Tunnel is the stable path.
+
+For private testing across your own devices:
+
+```bash
+./setup-cloudflare-tunnel.sh tailscale
+```
+
+This installs/connects Tailscale and rewrites `.env.tunnel` with `TUNNEL_METHOD="tailscale"` and `API_URL="http://<tailscale-ip>:<api-port>"`. Keep the API/Admin/Studio host ports stable in Coolify before using this mode for Flutter builds.
 
 ## Coolify Setup
 
@@ -113,6 +123,8 @@ flutter build apk --dart-define=API_BASE_URL="$API_URL"
 ./setup-cloudflare-tunnel.sh doctor
 ./setup-cloudflare-tunnel.sh verify
 ```
+
+`verify` checks the active tunnel mode, DNS when Cloudflare is active, local origin ports, Coolify dashboard/container state, Supabase containers, Redis, and the Postgres extensions `postgis`, `uuid-ossp`, and `pg_trgm` when PostgreSQL is reachable.
 
 If local services are not running yet, setup still succeeds by default. Set `CF_REQUIRE_LOCAL_PORTS="1"` in `cloudflare.config.sh` when you want closed local ports to fail the setup.
 
