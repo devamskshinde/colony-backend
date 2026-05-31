@@ -1155,14 +1155,19 @@ EOF
   chmod 700 "$runner"
 
   log "Registering Windows scheduled task '$task_name' for WSL distro '$distro'"
-  CF_WSL_TASK_NAME="$task_name" CF_WSL_DISTRO="$distro" CF_WSL_RUNNER="$runner" powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '
+param(
+  [Parameter(Mandatory=$true)][string]$TaskName,
+  [Parameter(Mandatory=$true)][string]$Distro,
+  [Parameter(Mandatory=$true)][string]$Runner
+)
 $ErrorActionPreference = "Stop"
-$action = New-ScheduledTaskAction -Execute "wsl.exe" -Argument "-d `"$env:CF_WSL_DISTRO`" -- bash `"$env:CF_WSL_RUNNER`""
+$action = New-ScheduledTaskAction -Execute "wsl.exe" -Argument "-d `"$Distro`" -- bash `"$Runner`""
 $trigger = New-ScheduledTaskTrigger -AtLogOn
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
-Register-ScheduledTask -TaskName $env:CF_WSL_TASK_NAME -Action $action -Trigger $trigger -Settings $settings -Description "Colony backend Cloudflare tunnel connector" -Force | Out-Null
-Start-ScheduledTask -TaskName $env:CF_WSL_TASK_NAME
-'
+Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "Colony backend Cloudflare tunnel connector" -Force | Out-Null
+Start-ScheduledTask -TaskName $TaskName
+' -TaskName "$task_name" -Distro "$distro" -Runner "$runner"
   ok "Scheduled task installed. Logs: $LOG_DIR/cloudflared.log"
 }
 
