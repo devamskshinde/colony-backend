@@ -21,7 +21,15 @@ The script can install/check Coolify in WSL, create or reuse a permanent Cloudfl
 
 On a new device, pull the repo and run the setup script. When a Cloudflare command needs the API token, it asks for it once in visible text, checks it with Cloudflare, and can save it locally into ignored `cloudflare.secrets.sh`. If a saved token already exists, the script asks whether to reuse it or paste a new one.
 
-Use a Cloudflare dashboard API Token, either a user token (`cfut_...`) from `My Profile -> API Tokens` or an account token (`cfat_...`) from the account API token page. Do not paste a Cloudflare Access/service token or a tunnel connector token. The token needs zone DNS edit/read access for `ilovespdf.in` and account Cloudflare Tunnel edit/read access for the configured account.
+Use a Cloudflare dashboard API Token, either a user token (`cfut_...`) from `My Profile -> API Tokens` or an account token (`cfat_...`) from the account API token page. Do not paste a Cloudflare Access/service token or a tunnel connector token.
+
+Required token permissions:
+
+- Zone -> Zone -> Read for `ilovespdf.in`
+- Zone -> DNS -> Edit for `ilovespdf.in`
+- Account -> Cloudflare Tunnel -> Write for account `eb24ed02a802e6e5a0fa74952ef0717a`
+
+If `Cloudflare Tunnel` is not shown in the account permission picker, use one of Cloudflare's newer equivalent account permissions: `Cloudflare One Connectors Write` or `Cloudflare One Connector: cloudflared Write`.
 
 ## Coolify And WSL Notes
 

@@ -380,6 +380,11 @@ cf_api() {
   fi
   if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
     print_cf_errors "$response_body"
+    if [[ "$endpoint" == *"/cfd_tunnel"* && "$http_code" == "403" ]]; then
+      warn "Cloudflare accepted the token, but denied Cloudflare Tunnel API access."
+      warn "Add one account permission on account $CF_ACCOUNT_ID: Cloudflare Tunnel Write, Cloudflare One Connectors Write, or Cloudflare One Connector: cloudflared Write."
+      warn "If you only need to list existing tunnels, the matching Read permission is enough, but setup needs Write."
+    fi
     die "Cloudflare API returned HTTP $http_code for $method $endpoint."
   fi
   if ! jq -e '.success == true' >/dev/null 2>&1 <<<"$response_body"; then
