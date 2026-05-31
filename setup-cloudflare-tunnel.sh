@@ -27,7 +27,7 @@ fi
 log() { printf '%s\n' "${C_BLUE}==>${C_RESET} $*" >&2; }
 ok() { printf '%s\n' "${C_GREEN}ok${C_RESET}  $*" >&2; }
 warn() { printf '%s\n' "${C_YELLOW}warn${C_RESET} $*" >&2; }
-die() { printf '%s\n' "${C_RED}error${C_RESET} $*" >&2; exit 1; }
+die() { trap - ERR; printf '%s\n' "${C_RED}error${C_RESET} $*" >&2; exit 1; }
 
 on_error() {
   local exit_code=$?
@@ -207,6 +207,7 @@ shell_quote() {
 
 write_secret_assignment() {
   local key="$1" value="$2"
+  local tmp
   if [[ ! -f "$SECRETS_FILE" ]]; then
     cat >"$SECRETS_FILE" <<'EOF'
 #!/usr/bin/env bash
@@ -214,33 +215,45 @@ write_secret_assignment() {
 
 EOF
   fi
+  tmp="$SECRETS_FILE.tmp"
+  grep -v -E "^${key}=" "$SECRETS_FILE" >"$tmp" 2>/dev/null || true
+  mv "$tmp" "$SECRETS_FILE"
   printf '%s=%s\n' "$key" "$(shell_quote "$value")" >>"$SECRETS_FILE"
   chmod 600 "$SECRETS_FILE" 2>/dev/null || true
 }
 
-ensure_cloudflare_token() {
-  local force_prompt="${1:-0}"
-  if [[ -n "${CF_API_TOKEN:-}" && "$force_prompt" != "1" ]]; then
-    return 0
+source_secrets_if_present() {
+  if [[ -f "$SECRETS_FILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$SECRETS_FILE"
   fi
+}
+
+ensure_cloudflare_token() {
+  source_secrets_if_present
+  local choice token save_choice
 
   if [[ ! -t 0 ]]; then
+    [[ -n "${CF_API_TOKEN:-}" ]] && return 0
     die "Missing CF_API_TOKEN. Run './setup-cloudflare-tunnel.sh setup' in an interactive terminal so it can ask for the token, or export CF_API_TOKEN."
   fi
 
-  warn "Cloudflare API token is required for tunnel/DNS commands."
   if [[ -n "${CF_API_TOKEN:-}" ]]; then
-    printf 'Paste new Cloudflare API token (blank keeps current, input hidden): ' >&2
+    warn "A saved Cloudflare API token was found."
+    printf 'Use saved token? [Y/n]: ' >&2
+    IFS= read -r choice
+    case "${choice:-Y}" in
+      y|Y|yes|YES)
+        ok "Using saved Cloudflare API token"
+        return 0
+        ;;
+    esac
+    printf 'Paste new Cloudflare API token: ' >&2
   else
-    printf 'Paste Cloudflare API token (input hidden): ' >&2
+    warn "Cloudflare API token is required for tunnel/DNS commands."
+    printf 'Paste Cloudflare API token: ' >&2
   fi
-  local token save_choice
-  IFS= read -r -s token
-  printf '\n' >&2
-  if [[ -z "$token" && -n "${CF_API_TOKEN:-}" ]]; then
-    ok "Keeping existing CF_API_TOKEN"
-    return 0
-  fi
+  IFS= read -r token
   [[ -n "$token" ]] || die "Cloudflare API token cannot be empty."
   CF_API_TOKEN="$token"
 
@@ -255,6 +268,34 @@ ensure_cloudflare_token() {
       warn "Token kept only for this run."
       ;;
   esac
+}
+
+verify_cloudflare_token_or_prompt() {
+  local attempts=0
+  while true; do
+    ensure_cloudflare_token
+    if check_cloudflare_token_nonfatal; then
+      return 0
+    fi
+
+    attempts=$((attempts + 1))
+    if [[ ! -t 0 || "$attempts" -ge 3 ]]; then
+      die "Cloudflare rejected the API token. Create a Cloudflare API Token from My Profile -> API Tokens with Zone DNS Edit for $CF_DOMAIN_NORMALIZED and Cloudflare Tunnel account permissions, then rerun setup."
+    fi
+
+    warn "The saved/pasted token is not valid for Cloudflare's API."
+    printf 'Paste a different Cloudflare API token now? [Y/n]: ' >&2
+    local retry
+    IFS= read -r retry
+    case "${retry:-Y}" in
+      y|Y|yes|YES)
+        CF_API_TOKEN=""
+        ;;
+      *)
+        die "Cannot continue without a valid Cloudflare API token."
+        ;;
+    esac
+  done
 }
 
 install_missing_deps_if_allowed() {
@@ -280,7 +321,7 @@ ensure_core_deps() {
 }
 
 cf_api() {
-  ensure_cloudflare_token
+  [[ -n "${CF_API_TOKEN:-}" ]] || ensure_cloudflare_token
   local method="$1"
   local endpoint="$2"
   local body="${3:-}"
@@ -981,6 +1022,7 @@ setup_tunnel() {
   source_config
   ensure_core_deps
   check_local_ports
+  verify_cloudflare_token_or_prompt
 
   log "Resolving Cloudflare zone for $CF_DOMAIN_NORMALIZED"
   local zone_id tunnel_id target
@@ -1008,6 +1050,7 @@ run_tunnel() {
   source_config
   ensure_core_deps
   source_tunnel_env_if_present
+  verify_cloudflare_token_or_prompt
   local tunnel_id="${TUNNEL_ID:-}"
   if [[ -z "$tunnel_id" ]]; then
     tunnel_id="$(find_tunnel_id)"
@@ -1028,6 +1071,7 @@ service_install() {
   source_config
   ensure_core_deps
   source_tunnel_env_if_present
+  verify_cloudflare_token_or_prompt
   local tunnel_id="${TUNNEL_ID:-}"
   [[ -n "$tunnel_id" ]] || tunnel_id="$(find_tunnel_id)"
   [[ -n "$tunnel_id" ]] || die "No tunnel found. Run './setup-cloudflare-tunnel.sh setup' first."
@@ -1214,6 +1258,7 @@ verify_all() {
   fi
 
   ensure_core_deps
+  verify_cloudflare_token_or_prompt
   local tunnel_id="${TUNNEL_ID:-}"
   [[ -n "$tunnel_id" ]] || tunnel_id="$(find_tunnel_id)"
   [[ -n "$tunnel_id" ]] || die "No tunnel found. Run './setup-cloudflare-tunnel.sh setup' first."
