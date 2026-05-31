@@ -208,10 +208,19 @@ shell_quote() {
 explain_cloudflare_token_shape() {
   local token="${1:-}"
   if [[ "$token" == cfat_* ]]; then
-    warn "This token starts with 'cfat_'. That does not look like a Cloudflare dashboard API Token for the v4 REST API."
-    warn "Create a token from Cloudflare Dashboard -> My Profile -> API Tokens -> Create Token -> Custom token."
+    ok "Token format looks like a Cloudflare Account API Token."
+  elif [[ "$token" == cfut_* ]]; then
+    ok "Token format looks like a Cloudflare User API Token."
   elif [[ "$token" == *" "* ]]; then
     warn "The token contains spaces. Paste only the raw token value, without 'Bearer', quotes, or extra text."
+  fi
+}
+
+cloudflare_token_verify_endpoint() {
+  if [[ "${CF_API_TOKEN:-}" == cfat_* ]]; then
+    printf '/accounts/%s/tokens/verify' "$CF_ACCOUNT_ID"
+  else
+    printf '/user/tokens/verify'
   fi
 }
 
@@ -393,7 +402,8 @@ check_cloudflare_token_nonfatal() {
     warn "Cloudflare API token is missing. Put CF_API_TOKEN in $SECRETS_FILE or export it before setup."
     return 1
   fi
-  local response http_code response_body messages
+  local response http_code response_body messages endpoint
+  endpoint="$(cloudflare_token_verify_endpoint)"
   response="$(
     curl --silent --show-error --location \
       --header "Authorization: Bearer $CF_API_TOKEN" \
@@ -401,7 +411,7 @@ check_cloudflare_token_nonfatal() {
       --connect-timeout "$CF_CURL_CONNECT_TIMEOUT" \
       --max-time "$CF_CURL_MAX_TIME" \
       --write-out $'\n%{http_code}' \
-      "$CF_API_BASE/user/tokens/verify" 2>&1 || true
+      "$CF_API_BASE$endpoint" 2>&1 || true
   )"
   if [[ -z "$response" ]]; then
     warn "Cloudflare API token check did not return a response"
@@ -413,7 +423,7 @@ check_cloudflare_token_nonfatal() {
     ok "Cloudflare API token verified"
     return 0
   fi
-  warn "Cloudflare API token check failed with HTTP $http_code"
+  warn "Cloudflare API token check failed with HTTP $http_code at $endpoint"
   explain_cloudflare_token_shape "$CF_API_TOKEN"
   if jq -e . >/dev/null 2>&1 <<<"$response_body"; then
     messages="$(jq -r '(.errors // [])[]? | "- code \(.code): \(.message)"' <<<"$response_body")"
