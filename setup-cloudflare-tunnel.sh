@@ -1173,8 +1173,34 @@ Register-ScheduledTask -TaskName \$TaskName -Action \$action -Trigger \$trigger 
 Start-ScheduledTask -TaskName \$TaskName
 EOF
 )"
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ps_script"
-  ok "Scheduled task installed. Logs: $LOG_DIR/cloudflared.log"
+  if powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ps_script"; then
+    ok "Scheduled task installed. Logs: $LOG_DIR/cloudflared.log"
+    return 0
+  fi
+
+  warn "Windows denied Scheduled Task creation. Falling back to a per-user Startup launcher."
+  install_wsl_startup_launcher "$distro" "$runner"
+}
+
+install_wsl_startup_launcher() {
+  local distro="$1" runner="$2" ps_script
+  ps_script="$(cat <<EOF
+\$ErrorActionPreference = "Stop"
+\$Distro = $(ps_single_quote "$distro")
+\$Runner = $(ps_single_quote "$runner")
+\$Startup = [Environment]::GetFolderPath("Startup")
+\$Launcher = Join-Path \$Startup "ColonyCloudflareTunnel.cmd"
+\$Content = @(
+  "@echo off",
+  "start `"`" /min wsl.exe -d `"\$Distro`" -- bash `"\$Runner`""
+)
+Set-Content -LiteralPath \$Launcher -Value \$Content -Encoding ASCII
+Start-Process -WindowStyle Hidden -FilePath "wsl.exe" -ArgumentList @("-d", \$Distro, "--", "bash", \$Runner)
+Write-Host "Startup launcher installed at \$Launcher"
+EOF
+)"
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ps_script" || die "Could not install Windows Startup launcher. Run './setup-cloudflare-tunnel.sh run' manually, or rerun service-install from an elevated shell."
+  ok "Startup launcher installed. Logs: $LOG_DIR/cloudflared.log"
 }
 
 verify_dns_record() {
