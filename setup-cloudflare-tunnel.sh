@@ -41,6 +41,7 @@ usage() {
 Usage:
   ./setup-cloudflare-tunnel.sh all                Install/check Coolify, create tunnel/DNS, write env files
   ./setup-cloudflare-tunnel.sh install-coolify    Install or verify Coolify inside Linux/WSL
+  ./setup-cloudflare-tunnel.sh configure-secrets  Prompt for local-only secrets
   ./setup-cloudflare-tunnel.sh setup              Create/update tunnel, DNS, and .env.tunnel
   ./setup-cloudflare-tunnel.sh tunnel             Choose Cloudflare, Tailscale, or direct IP interactively
   ./setup-cloudflare-tunnel.sh run                Run cloudflared in the foreground
@@ -201,6 +202,79 @@ source_tunnel_env_if_present() {
   fi
 }
 
+shell_quote() {
+  printf '%q' "$1"
+}
+
+write_secret_assignment() {
+  local key="$1" value="$2"
+  if [[ ! -f "$SECRETS_FILE" ]]; then
+    cat >"$SECRETS_FILE" <<'EOF'
+#!/usr/bin/env bash
+# Local secrets for Colony backend. This file is ignored by git.
+
+EOF
+  fi
+  printf '%s=%s\n' "$key" "$(shell_quote "$value")" >>"$SECRETS_FILE"
+  chmod 600 "$SECRETS_FILE" 2>/dev/null || true
+}
+
+ensure_cloudflare_token() {
+  local force_prompt="${1:-0}"
+  if [[ -n "${CF_API_TOKEN:-}" && "$force_prompt" != "1" ]]; then
+    return 0
+  fi
+
+  if [[ ! -t 0 ]]; then
+    die "Missing CF_API_TOKEN. Run './setup-cloudflare-tunnel.sh configure-secrets' on this device or export CF_API_TOKEN."
+  fi
+
+  warn "Cloudflare API token is required for tunnel/DNS commands."
+  if [[ -n "${CF_API_TOKEN:-}" ]]; then
+    printf 'Paste new Cloudflare API token (blank keeps current, input hidden): ' >&2
+  else
+    printf 'Paste Cloudflare API token (input hidden): ' >&2
+  fi
+  local token save_choice
+  IFS= read -r -s token
+  printf '\n' >&2
+  if [[ -z "$token" && -n "${CF_API_TOKEN:-}" ]]; then
+    ok "Keeping existing CF_API_TOKEN"
+    return 0
+  fi
+  [[ -n "$token" ]] || die "Cloudflare API token cannot be empty."
+  CF_API_TOKEN="$token"
+
+  printf 'Save it to %s for this device? [Y/n]: ' "$SECRETS_FILE" >&2
+  IFS= read -r save_choice
+  case "${save_choice:-Y}" in
+    y|Y|yes|YES)
+      write_secret_assignment "CF_API_TOKEN" "$CF_API_TOKEN"
+      ok "Saved CF_API_TOKEN to $SECRETS_FILE"
+      ;;
+    *)
+      warn "Token kept only for this run."
+      ;;
+  esac
+}
+
+configure_secrets() {
+  source_config
+  ensure_cloudflare_token 1
+
+  if [[ -t 0 ]]; then
+    printf 'Optional Tailscale auth key for unattended setup (blank to skip, input hidden): ' >&2
+    local ts_key
+    IFS= read -r -s ts_key
+    printf '\n' >&2
+    if [[ -n "$ts_key" ]]; then
+      TAILSCALE_AUTHKEY="$ts_key"
+      write_secret_assignment "TAILSCALE_AUTHKEY" "$TAILSCALE_AUTHKEY"
+      ok "Saved TAILSCALE_AUTHKEY to $SECRETS_FILE"
+    fi
+  fi
+}
+
 install_missing_deps_if_allowed() {
   local missing=("$@")
   (( ${#missing[@]} == 0 )) && return 0
@@ -224,7 +298,7 @@ ensure_core_deps() {
 }
 
 cf_api() {
-  [[ -n "${CF_API_TOKEN:-}" ]] || die "Missing CF_API_TOKEN. Put it in $SECRETS_FILE or export it before running Cloudflare commands."
+  ensure_cloudflare_token
   local method="$1"
   local endpoint="$2"
   local body="${3:-}"
@@ -1240,6 +1314,7 @@ main() {
   case "$command" in
     all) setup_all ;;
     install-coolify) install_coolify ;;
+    configure-secrets) configure_secrets ;;
     setup) setup_tunnel ;;
     tunnel) interactive_tunnel ;;
     run) run_tunnel ;;
