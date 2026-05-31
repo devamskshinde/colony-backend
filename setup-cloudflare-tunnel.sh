@@ -220,6 +220,12 @@ shell_quote() {
   printf '%q' "$1"
 }
 
+ps_single_quote() {
+  local value="$1"
+  value="${value//\'/\'\'}"
+  printf "'%s'" "$value"
+}
+
 explain_cloudflare_token_shape() {
   local token="${1:-}"
   if [[ "$token" == cfat_* ]]; then
@@ -1140,7 +1146,7 @@ service_install() {
 
 install_wsl_scheduled_task() {
   have powershell.exe || die "powershell.exe not available from WSL. Run foreground mode or enable WSL interop."
-  local distro task_name runner
+  local distro task_name runner ps_script
   distro="${WSL_DISTRO_NAME:-}"
   [[ -n "$distro" ]] || die "WSL_DISTRO_NAME is missing; cannot create a Windows scheduled task safely."
   task_name="${CF_WSL_TASK_NAME:-ColonyCloudflareTunnel}"
@@ -1155,19 +1161,19 @@ EOF
   chmod 700 "$runner"
 
   log "Registering Windows scheduled task '$task_name' for WSL distro '$distro'"
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command '
-param(
-  [Parameter(Mandatory=$true)][string]$TaskName,
-  [Parameter(Mandatory=$true)][string]$Distro,
-  [Parameter(Mandatory=$true)][string]$Runner
-)
-$ErrorActionPreference = "Stop"
-$action = New-ScheduledTaskAction -Execute "wsl.exe" -Argument "-d `"$Distro`" -- bash `"$Runner`""
-$trigger = New-ScheduledTaskTrigger -AtLogOn
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
-Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description "Colony backend Cloudflare tunnel connector" -Force | Out-Null
-Start-ScheduledTask -TaskName $TaskName
-' -TaskName "$task_name" -Distro "$distro" -Runner "$runner"
+  ps_script="$(cat <<EOF
+\$ErrorActionPreference = "Stop"
+\$TaskName = $(ps_single_quote "$task_name")
+\$Distro = $(ps_single_quote "$distro")
+\$Runner = $(ps_single_quote "$runner")
+\$action = New-ScheduledTaskAction -Execute "wsl.exe" -Argument "-d \`"\$Distro\`" -- bash \`"\$Runner\`""
+\$trigger = New-ScheduledTaskTrigger -AtLogOn
+\$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
+Register-ScheduledTask -TaskName \$TaskName -Action \$action -Trigger \$trigger -Settings \$settings -Description "Colony backend Cloudflare tunnel connector" -Force | Out-Null
+Start-ScheduledTask -TaskName \$TaskName
+EOF
+)"
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ps_script"
   ok "Scheduled task installed. Logs: $LOG_DIR/cloudflared.log"
 }
 
