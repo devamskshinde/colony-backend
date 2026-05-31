@@ -1,4 +1,4 @@
-cloudflare.config.sh
+cloudflare.secrets.sh
 .env.local
 .cloudflared/
 logs/

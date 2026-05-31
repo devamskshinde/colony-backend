@@ -4,6 +4,7 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 SCRIPT_PATH="$SCRIPT_DIR/$(basename -- "${BASH_SOURCE[0]}")"
 CONFIG_FILE="${CLOUDFLARE_CONFIG:-$SCRIPT_DIR/cloudflare.config.sh}"
+SECRETS_FILE="${CLOUDFLARE_SECRETS:-$SCRIPT_DIR/cloudflare.secrets.sh}"
 ENV_FILE="${TUNNEL_ENV_FILE:-$SCRIPT_DIR/.env.tunnel}"
 STATE_DIR="$SCRIPT_DIR/.cloudflared"
 LOG_DIR="$SCRIPT_DIR/logs"
@@ -56,6 +57,7 @@ Usage:
   ./setup-cloudflare-tunnel.sh help               Show this help
 
 The script sources cloudflare.config.sh, then writes .env.tunnel after setup.
+Secrets are read from cloudflare.secrets.sh or environment variables.
 USAGE
 }
 
@@ -135,11 +137,15 @@ source_config() {
   [[ -f "$CONFIG_FILE" ]] || die "Missing $CONFIG_FILE. Copy cloudflare.config.example.sh to cloudflare.config.sh and fill it in."
   # shellcheck source=/dev/null
   source "$CONFIG_FILE"
+  if [[ -f "$SECRETS_FILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$SECRETS_FILE"
+  fi
 
   : "${CF_DOMAIN:?CF_DOMAIN is required}"
   : "${CF_TUNNEL_NAME:?CF_TUNNEL_NAME is required}"
   : "${CF_ACCOUNT_ID:?CF_ACCOUNT_ID is required}"
-  : "${CF_API_TOKEN:?CF_API_TOKEN is required}"
+  CF_API_TOKEN="${CF_API_TOKEN:-}"
   : "${CF_API_SUBDOMAIN:?CF_API_SUBDOMAIN is required}"
   : "${CF_ADMIN_SUBDOMAIN:?CF_ADMIN_SUBDOMAIN is required}"
   : "${CF_STUDIO_SUBDOMAIN:?CF_STUDIO_SUBDOMAIN is required}"
@@ -218,6 +224,7 @@ ensure_core_deps() {
 }
 
 cf_api() {
+  [[ -n "${CF_API_TOKEN:-}" ]] || die "Missing CF_API_TOKEN. Put it in $SECRETS_FILE or export it before running Cloudflare commands."
   local method="$1"
   local endpoint="$2"
   local body="${3:-}"
@@ -273,6 +280,10 @@ print_cf_errors() {
 }
 
 check_cloudflare_token_nonfatal() {
+  if [[ -z "${CF_API_TOKEN:-}" ]]; then
+    warn "Cloudflare API token is missing. Put CF_API_TOKEN in $SECRETS_FILE or export it before setup."
+    return 1
+  fi
   local response http_code response_body messages
   response="$(
     curl --silent --show-error --location \
@@ -1178,6 +1189,7 @@ doctor() {
   source_config
   source_tunnel_env_if_present
   printf 'Config file:       %s\n' "$CONFIG_FILE"
+  printf 'Secrets file:      %s\n' "$SECRETS_FILE"
   printf 'Tunnel env file:   %s\n' "$ENV_FILE"
   printf 'Domain:            %s\n' "$CF_DOMAIN_NORMALIZED"
   printf 'Tunnel name:       %s\n' "$CF_TUNNEL_NAME"

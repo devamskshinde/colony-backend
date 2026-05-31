@@ -11,8 +11,10 @@ The script can install/check Coolify in WSL, create or reuse a permanent Cloudfl
 
 ## Files
 
-- `cloudflare.config.sh`: fill once with domain, tunnel name, account id, API token, subdomains, and local ports. This file is ignored by git.
-- `cloudflare.config.example.sh`: safe template to commit.
+- `cloudflare.config.sh`: committed project config with domain, tunnel name, account id, subdomains, route mode, and local ports.
+- `cloudflare.secrets.sh`: local-only API token/auth key file. This file is ignored by git.
+- `cloudflare.config.example.sh`: safe config template.
+- `cloudflare.secrets.example.sh`: safe secrets template.
 - `.env.tunnel`: generated after setup. It contains permanent URLs and can be sourced by later scripts.
 - `.env.local`: generated machine-local WSL/Coolify state. This is ignored because WSL IPs can change.
 - `setup-cloudflare-tunnel.sh`: one script for Coolify install/status, tunnel setup, tunnel run, service install, verification, and diagnostics.
@@ -128,4 +130,4 @@ flutter build apk --dart-define=API_BASE_URL="$API_URL"
 
 If local services are not running yet, setup still succeeds by default. Set `CF_REQUIRE_LOCAL_PORTS="1"` in `cloudflare.config.sh` when you want closed local ports to fail the setup.
 
-Do not push `cloudflare.config.sh` to GitHub. The API token in that file can change DNS and tunnel resources in your Cloudflare account.
+Do not push `cloudflare.secrets.sh` to GitHub. The API token in that file can change DNS and tunnel resources in your Cloudflare account.
